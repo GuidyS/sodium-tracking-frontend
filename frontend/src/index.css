@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 110 25% 93%;
+    --foreground: 140 25% 15%;
+
+    --card: 110 20% 97%;
+    --card-foreground: 140 25% 15%;
+
+    --popover: 110 20% 97%;
+    --popover-foreground: 140 25% 15%;
+
+    --primary: 155 45% 45%; 
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 110 20% 89%;
+    --secondary-foreground: 140 25% 15%;
+
+    --muted: 110 15% 87%;
+    --muted-foreground: 140 10% 45%;
+
+    --accent: 155 55% 48%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 110 18% 84%;
+    --input: 110 15% 80%;
+    --ring: 155 45% 45%;
+
+    --radius: 1rem;
+
+    --gradient-start: 105 52% 71%;
+    --gradient-end: 155 55% 48%;
+
+    --sidebar-background: 110 15% 97%;
+    --sidebar-foreground: 140 20% 20%;
+    --sidebar-primary: 140 25% 15%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 110 15% 94%;
+    --sidebar-accent-foreground: 140 25% 15%;
+    --sidebar-border: 110 15% 90%;
+    --sidebar-ring: 105 52% 71%;
+
+    --font-heading: 'Anuphan', sans-serif;
+    --font-body: 'Anuphan', sans-serif;
+  }
+
+  .dark {
+    --background: 140 20% 8%;
+    --foreground: 110 15% 92%;
+    --card: 140 18% 12%;
+    --card-foreground: 110 15% 92%;
+    --popover: 140 18% 12%;
+    --popover-foreground: 110 15% 92%;
+    --primary: 105 52% 71%;
+    --primary-foreground: 105 40% 15%;
+    --secondary: 140 15% 18%;
+    --secondary-foreground: 110 15% 92%;
+    --muted: 140 15% 18%;
+    --muted-foreground: 110 10% 60%;
+    --accent: 155 55% 40%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 140 15% 20%;
+    --input: 140 15% 20%;
+    --ring: 105 52% 71%;
+    --sidebar-background: 140 15% 10%;
+    --sidebar-foreground: 110 10% 95%;
+    --sidebar-primary: 105 52% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 140 12% 16%;
+    --sidebar-accent-foreground: 110 10% 95%;
+    --sidebar-border: 140 12% 16%;
+    --sidebar-ring: 105 52% 71%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Anuphan', sans-serif;;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+@layer components {
+  .gradient-btn {
+    background: linear-gradient(135deg, hsl(var(--gradient-start)), hsl(var(--gradient-end)));
+  }
+
+  .gradient-btn:hover {
+    background: linear-gradient(135deg, hsl(var(--gradient-start) / 0.9), hsl(var(--gradient-end) / 0.9));
+  }
+
+  .glass-card {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+}
