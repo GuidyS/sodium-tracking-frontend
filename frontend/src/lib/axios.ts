@@ -1,11 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL,
+    baseURL: import.meta.env.VITE_API_BASE_URL, // เปลี่ยนชื่อให้ตรงกับที่ตั้งใน Vercel
     headers: {
         'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true'
-        // 'Authorization': `Bearer ${token}` // ถ้ามีระบบ login
     },
     withCredentials: true
 });
