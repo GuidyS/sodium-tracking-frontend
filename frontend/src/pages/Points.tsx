@@ -24,7 +24,7 @@ const Points = () => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     setPoints(user.total_points || 0);
 
-    const res = await api.get("/index.php?page=food-log&action=daily_all");
+    const res = await api.get(`/index.php?page=food-log&action=daily_all&user_id=${user.user_id}`);
     
     if (res.data.status === "success" && Array.isArray(res.data.data)) {
       const validLogs = res.data.data.filter((log: any) => log && log.log_date);
