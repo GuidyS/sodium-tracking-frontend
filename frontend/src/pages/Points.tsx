@@ -31,11 +31,20 @@ const Points = () => {
       
       // ✅ แก้จุดนี้: เก็บวันที่แบบ String ตรงๆ ไม่ผ่าน Date Object เพื่อกันวันที่เคลื่อน
       const loggedDatesStr = validLogs
-        .filter((log: any) => Number(log.total_sodium_daily) > 0)
-        .map((log: any) => {
-          // ตัดเอาแค่ YYYY-MM-DD เผื่อกรณี API ส่งเวลาติดมา
-          return log.log_date.split(' ')[0]; 
-        });
+      .filter((log: any) => {
+        // เช็คทั้ง total_sodium_daily (เผื่อ API ส่งมาเป็นชื่อนี้) 
+        // หรือเช็คว่ามี log_date ก็ถือว่ามีการบันทึกแล้ว
+        const sodium = Number(log.total_sodium_daily || 0);
+        return sodium > 0;
+      })
+      .map((log: any) => {
+        // บังคับให้ format เป็น YYYY-MM-DD แน่นอน
+        const d = new Date(log.log_date);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      });
 
       console.log("วันที่ที่มีการบันทึก (logs):", loggedDatesStr); // 👈 เพิ่มบรรทัดนี้ดูใน Console (F12)
       setLogs(loggedDatesStr);
