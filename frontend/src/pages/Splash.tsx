@@ -18,30 +18,56 @@ const Splash = () => {
   const navigate = useNavigate();
   const [show, setShow] = useState(true);
 
-useEffect(() => {
-  const verifyAndPersist = async () => {
-    try {
-      // ✅ 1. เรียก API 'me' ที่เราเขียนไว้ใน index.php เพื่อเอาข้อมูล User ล่าสุด
-      const response = await api.get("/index.php?page=me");
-      
-      if (response.data.status === "success") {
-        // ✅ 2. บันทึกลง localStorage เพื่อให้ครั้งหน้าไม่ต้องล็อกอินใหม่
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        
-        // ✅ 3. ตรวจสอบว่าทำ Pretest แล้วหรือยัง
-        const pretestDone = localStorage.getItem("pretest_done");
-        const destination = pretestDone ? "/dashboard" : "/pretest";
-        setTimeout(() => navigate(destination), 1500); 
-      }
-    } catch (error) {
-      // ถ้า Session หมดอายุหรือผิดพลาด ให้กลับไปเริ่มใหม่ที่หน้า Login
-      localStorage.removeItem("user");
-      navigate("/");
-    }
-  };
+  useEffect(() => {
+    const verifyAndPersist = async () => {
+      // 🌟 1. ตรวจสอบข้อมูลจาก URL (กรณีเพิ่ง Redirect กลับจาก Google Login)
+      const params = new URLSearchParams(window.location.search);
+      const userFromUrl = params.get("user");
 
-  verifyAndPersist();
-}, [navigate]);
+      if (userFromUrl) {
+        try {
+          const userData = JSON.parse(decodeURIComponent(userFromUrl));
+          localStorage.setItem("user", JSON.stringify(userData));
+          // ล้าง URL ให้สะอาดเพื่อความปลอดภัย
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (e) {
+          console.error("Error parsing user from URL", e);
+        }
+      }
+
+      // ดึงข้อมูล User ที่เก็บไว้ในเครื่อง (ถ้ามี)
+      const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+      try {
+        // 🌟 2. เรียก API 'me' พร้อมส่ง user_id ไปเป็นแผนสำรอง (เผื่อคุกกี้ Session หลุด)
+        const response = await api.get("/index.php?page=me", {
+          params: { user_id: savedUser.user_id } 
+        });
+        
+        if (response.data.status === "success") {
+          const user = response.data.user;
+          // อัปเดตข้อมูลล่าสุดจาก DB ลงในเครื่อง
+          localStorage.setItem("user", JSON.stringify(user));
+          
+          // 🌟 3. ตรวจสอบสถานะการทำ Pretest (เช็คจาก DB โดยตรงจะแม่นยำที่สุด)
+          const isPretestDone = user.pretest_done == 1 || user.pretest_done === "1";
+          const destination = isPretestDone ? "/dashboard" : "/pretest";
+          
+          // หน่วงเวลาให้โชว์โลโก้สวยๆ สักครู่
+          setTimeout(() => navigate(destination), 2000); 
+        } else {
+          throw new Error("Invalid session");
+        }
+      } catch (error) {
+        console.error("Verification failed:", error);
+        // ถ้าไม่มีข้อมูลผู้ใช้หรือ Session หมดอายุ ให้กลับไปหน้า Login
+        localStorage.removeItem("user");
+        navigate("/");
+      }
+    };
+
+    verifyAndPersist();
+  }, [navigate]);
 
   return (
     <AnimatePresence>
@@ -72,7 +98,7 @@ useEffect(() => {
                 }}
                 className="flex flex-col items-center gap-2"
               >
-                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-card shadow-lg p-2">
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-card shadow-lg p-2 border border-border/50">
                   <img src={logo.src} alt={logo.label} className="h-full w-full object-contain" />
                 </div>
                 <span className="text-xs font-medium text-muted-foreground">
@@ -89,8 +115,8 @@ useEffect(() => {
             transition={{ delay: 1, duration: 0.6 }}
             className="text-center"
           >
-            <h1 className="font-heading text-3xl font-bold text-foreground">
-              Desalt DeNa
+            <h1 className="font-heading text-4xl font-bold tracking-tight text-foreground">
+              Desalt <span className="text-primary">DeNa</span>
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
               ติดตามปริมาณโซเดียมของคุณอย่างง่ายดาย
@@ -98,25 +124,21 @@ useEffect(() => {
           </motion.div>
 
           {/* Loading dots */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-            className="mt-10 flex gap-2"
-          >
+          <div className="mt-12 flex gap-3">
             {[0, 1, 2].map((i) => (
               <motion.div
                 key={i}
-                animate={{ scale: [1, 1.3, 1], opacity: [0.4, 1, 0.4] }}
+                animate={{ scale: [1, 1.4, 1], opacity: [0.3, 1, 0.3] }}
                 transition={{
-                  duration: 1,
+                  duration: 1.2,
                   repeat: Infinity,
                   delay: i * 0.2,
+                  ease: "easeInOut"
                 }}
-                className="h-2.5 w-2.5 rounded-full bg-primary"
+                className="h-3 w-3 rounded-full bg-primary"
               />
             ))}
-          </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
