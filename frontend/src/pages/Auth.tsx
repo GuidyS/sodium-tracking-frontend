@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, User, Lock, Mail, ChevronDown } from "lucide-react";
+import { Eye, EyeOff, Droplets, User, Lock, Mail, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/axios";
-import logo from "@/assets/logo-pharmacy.png";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,7 +23,7 @@ const Auth = () => {
   const [role, setRole] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const genderOptions = ["ชาย", "หญิง", "ไม่ระบุเพศ"];
+  const genderOptions = ["ชาย", "หญิง", "อื่นๆ"];
   const roleOptions = [
     { value: "general", label: "บุคคลทั่วไป" },
     { value: "teacher", label: "อาจารย์" },
@@ -72,56 +71,75 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
+    // ✅ 1. กำหนดรูปแบบอีเมลที่ถูกต้อง (Regex)
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
 
     if (isLogin) {
       // สำหรับ Login
       try {
+        // ✅ (ตัวเลือก) เพิ่มการตรวจสอบรูปแบบอีเมลตอน Login ด้วย
+        if (!emailRegex.test(username)) {
+          setErrorMsg("รูปแบบอีเมลไม่ถูกต้อง");
+          return;
+        }
+
         const response = await api.post("/index.php?page=login", {
-          email: username, // ใน state คุณตั้งชื่อว่า username แต่ส่งไปเป็น email
+          email: username,
           password: password,
         });
 
         if (response.data.status === "success") {
+          const user = response.data.user;
           localStorage.setItem("user", JSON.stringify(response.data.user));
-          navigate("/splash");
+
+          if (user.pretest_done === 0) {
+            navigate("/pretest");
+          } else {
+            navigate("/splash");
+          }
         }
       } catch (error: any) {
-        // ✅ ดึง message จาก Backend (login.php) มาใช้
         const message = error.response?.data?.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ";
         setErrorMsg(message);
       }
-      
-      const savedUser = localStorage.getItem("user");
-      if (savedUser) {
-        // ถ้ามี ให้ข้ามไปหน้า Dashboard เลย
-        navigate("/splash");
-      }
+
     } else {
-      // Register Validation
+      // ✅ 2. สำหรับ Register Validation
       if (!fullName || !email || !gender || !age || !weight || !height || !regPassword || !confirmPassword || !role) {
         setErrorMsg("กรุณากรอกข้อมูลให้ครบทุกช่อง");
         return;
       }
+
+      if (!emailRegex.test(email)) {
+        setErrorMsg("กรุณาสมัครสมาชิกด้วย @gmail.com เท่านั้น");
+        return;
+      }
+
       if (!genderOptions.includes(gender)) {
         setErrorMsg("กรุณาเลือกเพศให้ถูกต้อง");
         return;
       }
+
       if (!age || isNaN(Number(age)) || Number(age) < 1 || Number(age) > 100) {
         setErrorMsg("กรุณากรอกอายุให้ถูกต้อง (1-100)");
         return;
       }
+
       if (!height || isNaN(Number(height)) || Number(height) < 100) {
         setErrorMsg("กรุณากรอกส่วนสูงให้ถูกต้อง (อย่างน้อย 100 cm)");
         return;
       }
+
       if (!weight || isNaN(Number(weight)) || Number(weight) < 30) {
         setErrorMsg("กรุณากรอกน้ำหนักให้ถูกต้อง (อย่างน้อย 30 kg)");
         return;
       }
+
       if (!passwordStatus.isValid) {
         setErrorMsg("กรุณาตั้งรหัสผ่านให้มีความยาวอย่างน้อย 4 ตัวอักษร");
         return;
       }
+
       if (!isPasswordMatch) {
         setErrorMsg("ยืนยันรหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง");
         return;
@@ -144,7 +162,7 @@ const Auth = () => {
           setIsLogin(true); // เมื่อสมัครเสร็จ ให้สลับไปหน้า Login
           toast({
             title: "สมัครสมาชิกสำเร็จ!",
-            description: "กรุณาเข้าสู่ระบบเพื่อใช้งานต่อ",
+            description: "กรุณาเข้าสู่ระบบ",
           });
         }
       } catch (error: any) {
@@ -177,9 +195,9 @@ const Auth = () => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-            className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl shadow-lg bg-white"
+            className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl gradient-btn shadow-lg"
           >
-            <img src={logo} alt="SSRU Logo" className="h-16 w-auto object-contain" />
+            <Droplets className="h-8 w-8 text-primary-foreground" />
           </motion.div>
           <h1 className="font-heading text-3xl font-bold text-foreground">
             Sodium Tracking
@@ -233,7 +251,16 @@ const Auth = () => {
                     name="email"
                     placeholder="อีเมล"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setUsername(value);
+                      
+                      // ✅ ตรวจสอบถ้าถูกต้องให้ล้าง Error ทันที
+                      const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+                      if (emailRegex.test(value)) {
+                        setErrorMsg("");
+                      }
+                    }}
                     autoComplete="email"
                     className={`${inputClass} pl-11`}
                   />
@@ -288,7 +315,16 @@ const Auth = () => {
                     type="email"
                     placeholder="อีเมล"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setEmail(value);
+                      
+                      // ✅ ถ้าพิมพ์ถูกรูปแบบ @gmail.com แล้ว ให้ข้อความ Error หายไป
+                      const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+                      if (emailRegex.test(value)) {
+                        setErrorMsg("");
+                      }
+                    }}
                     autoComplete="email"
                     className={`${inputClass} pl-11`}
                   />
@@ -356,7 +392,15 @@ const Auth = () => {
                     type="password"
                     placeholder="ยืนยันรหัสผ่าน"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setConfirmPassword(value);
+                      
+                      // ✅ ถ้าแก้จนรหัสผ่านตรงกับช่องแรกแล้ว ให้ล้าง Error
+                      if (value === regPassword) {
+                        setErrorMsg("");
+                      }
+                    }}
                     autoComplete="new-password"
                     className={`${inputClass} pl-11`}
                   />
@@ -404,7 +448,7 @@ const Auth = () => {
           {/* Forgot password */}
           {isLogin && (
             <div className="text-right">
-              <button type="button" onClick={() => navigate("/forgot-password")} className="text-xs text-primary hover:underline">
+              <button onClick={() => navigate("/forgot-password")} type="button" className="text-xs text-primary hover:underline">
                 ลืมรหัสผ่าน?
               </button>
             </div>
