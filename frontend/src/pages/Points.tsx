@@ -25,18 +25,20 @@ const Points = () => {
       setPoints(user.total_points || 0);
 
       const res = await api.get("/index.php?page=food-log&action=daily_all");
+      
       if (res.data.status === "success" && Array.isArray(res.data.data)) {
-        const allLogs = res.data.data;
+        // 🌟 1. กรองเฉพาะข้อมูลที่มี log_date และมีค่าโซเดียมจริงๆ เท่านั้น
+        const validLogs = res.data.data.filter((log: any) => log && log.log_date);
         
-        // เก็บวันที่บันทึกอาหาร (สำหรับมาร์คสีเขียว)
-        const loggedDatesStr = allLogs
+        // เก็บวันที่สำหรับมาร์คสีเขียว
+        const loggedDatesStr = validLogs
           .filter((log: any) => log.total_sodium_daily > 0)
           .map((log: any) => log.log_date);
         setLogs(loggedDatesStr);
 
         const tempPointDates: number[] = [];
 
-        // 🌟 1. เช็คดาวจาก Pretest
+        // 🌟 2. เช็คดาวจาก Pretest
         if (Number(user.pretest_done) === 1 && user.updated_at) {
           const testDate = new Date(user.updated_at.replace(/-/g, "/"));
           if (testDate.getMonth() === currentMonth && testDate.getFullYear() === currentYear) {
@@ -44,17 +46,15 @@ const Points = () => {
           }
         }
 
-        // 🌟 2. เช็คดาวจาก Posttest (ถ้ามี)
-        if (Number(user.posttest_done) === 1 && user.posttest_date) {
-           const postDate = new Date(user.posttest_date.replace(/-/g, "/"));
-           if (postDate.getMonth() === currentMonth && postDate.getFullYear() === currentYear) {
-             tempPointDates.push(postDate.getDate());
-           }
-        }
-
         // 🌟 3. เช็คดาวจาก Food Log (สะสมครบทุก 3 วัน)
         const uniqueDaysCumulative = new Set<string>();
-        const sortedLogs = [...allLogs].sort((a, b) => a.log_date.localeCompare(b.log_date));
+        
+        // 🌟 4. แก้จุดที่พัง: ตรวจสอบค่าก่อนใช้ localeCompare
+        const sortedLogs = [...validLogs].sort((a, b) => {
+          const dateA = a.log_date || "";
+          const dateB = b.log_date || "";
+          return dateA.localeCompare(dateB);
+        });
 
         sortedLogs.forEach((log: any) => {
           if (log.total_sodium_daily <= 0) return;
