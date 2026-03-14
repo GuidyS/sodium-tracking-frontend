@@ -139,11 +139,15 @@ const Pretest = () => {
   };
 
   const handleSubmit = async () => {
-    try {
-      const res = await api.post("/index.php?page=food-log&action=submit_test", {
-        test_type: "pre",
-        score: score
-      });
+  // ดึงข้อมูล user จาก localStorage
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  try {
+    const res = await api.post("/index.php?page=food-log&action=submit_test", {
+      test_type: "pre",
+      score: score,
+      user_id: user.user_id // ส่ง ID ไปสำรองในกรณี Session หาไม่เจอ
+    });
       
       // ✅ 3. จัดการกรณี Success และ Error ตามสถานะที่ PHP ส่งมา
       if (res.data.status === "success") {
