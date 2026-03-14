@@ -6,9 +6,9 @@ import api from "@/lib/axios";
 
 const Points = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [logs, setLogs] = useState<string[]>([]); // เก็บเฉพาะวันที่ ["2024-03-01", ...]
+  const [logs, setLogs] = useState<string[]>([]);
   const [points, setPoints] = useState(0);
-  const [pointDates, setPointDates] = useState<number[]>([]); // วันที่จะโชว์ดาวในเดือนนั้น
+  const [pointDates, setPointDates] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const currentMonth = currentDate.getMonth();
@@ -28,30 +28,34 @@ const Points = () => {
       if (res.data.status === "success" && Array.isArray(res.data.data)) {
         const allLogs = res.data.data;
         
-        // 1. ดึงวันที่บันทึกอาหาร (สำหรับมาร์คสีเขียว)
+        // เก็บวันที่บันทึกอาหาร (สำหรับมาร์คสีเขียว)
         const loggedDatesStr = allLogs
           .filter((log: any) => log.total_sodium_daily > 0)
           .map((log: any) => log.log_date);
         setLogs(loggedDatesStr);
 
         const tempPointDates: number[] = [];
-        const uniqueDaysCumulative = new Set<string>();
 
-        // 🌟 เพิ่มลอจิก: ดาวจาก Pretest (เช็คจาก user object ใน localStorage)
+        // 🌟 1. เช็คดาวจาก Pretest
         if (Number(user.pretest_done) === 1 && user.updated_at) {
           const testDate = new Date(user.updated_at.replace(/-/g, "/"));
           if (testDate.getMonth() === currentMonth && testDate.getFullYear() === currentYear) {
-            tempPointDates.push(testDate.getDate()); // เพิ่มดาวในวันทำ Pretest
+            tempPointDates.push(testDate.getDate());
           }
         }
 
-        // 🌟 เพิ่มลอจิก: ดาวจาก Posttest
-        if (Number(user.posttest_done) === 1) {
-          // สามารถเพิ่มเงื่อนไขแสดงดาววันทำ Posttest ได้ในลักษณะเดียวกัน
+        // 🌟 2. เช็คดาวจาก Posttest (ถ้ามี)
+        if (Number(user.posttest_done) === 1 && user.posttest_date) {
+           const postDate = new Date(user.posttest_date.replace(/-/g, "/"));
+           if (postDate.getMonth() === currentMonth && postDate.getFullYear() === currentYear) {
+             tempPointDates.push(postDate.getDate());
+           }
         }
 
-        // 2. คำนวณดาวจากการบันทึกอาหาร (ทุก 3 วันสะสม)
+        // 🌟 3. เช็คดาวจาก Food Log (สะสมครบทุก 3 วัน)
+        const uniqueDaysCumulative = new Set<string>();
         const sortedLogs = [...allLogs].sort((a, b) => a.log_date.localeCompare(b.log_date));
+
         sortedLogs.forEach((log: any) => {
           if (log.total_sodium_daily <= 0) return;
           const dateKey = log.log_date;
@@ -69,13 +73,12 @@ const Points = () => {
         setPointDates(tempPointDates);
       }
     } catch (error) {
-      console.error("Failed to fetch points data:", error);
+      console.error("Fetch error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // สร้าง Array สำหรับวาดปฏิทิน (ป้องกัน Error .map is not a function)
   const numDays = new Date(currentYear, currentMonth + 1, 0).getDate();
   const daysArray = Array.from({ length: numDays }, (_, i) => i + 1);
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
@@ -85,7 +88,7 @@ const Points = () => {
     <PageLayout>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-20">
         
-        {/* 1. ส่วนบอกวันที่ปัจจุบัน (ตามโจทย์ข้อ 1) */}
+        {/* ส่วนแสดงวันที่ปัจจุบัน */}
         <div className="flex items-center gap-3 px-2">
           <div className="bg-primary/10 p-2.5 rounded-2xl text-primary">
             <CalendarIcon size={20} />
@@ -105,7 +108,7 @@ const Points = () => {
             <div className="bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/30">
               <Trophy className="text-white" size={32} />
             </div>
-            <p className="text-sm font-bold opacity-90 mb-1 uppercase tracking-widest">แต้มสะสมปัจจุบัน</p>
+            <p className="text-sm font-bold opacity-90 mb-1 uppercase tracking-widest">แต้มสะสมทั้งหมด</p>
             <div className="flex items-end justify-center gap-2">
               <span className="text-6xl font-black">{points}</span>
               <span className="text-xl font-bold mb-2">แต้ม</span>
@@ -130,20 +133,15 @@ const Points = () => {
 
           <div className="grid grid-cols-7 gap-1 mb-2">
             {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map(d => (
-              <div key={d} className="text-center text-[10px] font-bold text-muted-foreground py-2">{d}</div>
+              <div key={d} className="text-center text-[10px] font-bold text-muted-foreground py-2 uppercase tracking-tighter">{d}</div>
             ))}
           </div>
 
           <div className="grid grid-cols-7 gap-2">
             {blanks.map(i => <div key={`b-${i}`} />)}
-            {/* ใช้ daysArray.map แทน daysInMonth.map เพื่อแก้ Error หน้าขาว */}
             {daysArray.map((d) => {
               const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-              
-              // ข้อ 2: มาร์คสีเขียวถ้ามีการบันทึก
               const isTracked = logs.includes(dateStr); 
-              
-              // ข้อ 3: แสดงดาวถ้าเป็นวันที่ครบทุก 3 ครั้ง
               const showStar = pointDates.includes(d);
 
               return (
@@ -169,16 +167,16 @@ const Points = () => {
           </div>
           
           {/* คำอธิบายสัญลักษณ์ */}
-          <div className="mt-6 pt-4 border-t border-border/50 flex flex-wrap gap-4 text-[10px] text-muted-foreground font-medium">
+          <div className="mt-6 pt-4 border-t border-border/50 grid grid-cols-2 gap-2 text-[10px] text-muted-foreground font-medium">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-emerald-500" />
-              <span>บันทึกอาหารแล้ว</span>
+              <span>มีการบันทึกอาหาร</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-white border border-gray-200 flex items-center justify-center">
                 <Star size={8} className="text-yellow-400 fill-yellow-400" />
               </div>
-              <span>ได้รับดาว (สะสมครบ 3 วัน)</span>
+              <span>ได้รับแต้ม (3 วัน/แบบทดสอบ)</span>
             </div>
           </div>
         </div>
