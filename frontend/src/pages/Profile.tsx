@@ -12,7 +12,7 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Password change state
+  // Password state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,7 +20,6 @@ const Profile = () => {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // สร้าง State สำหรับเก็บข้อมูลจริง
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
@@ -33,7 +32,6 @@ const Profile = () => {
 
   const [editProfile, setEditProfile] = useState(profile);
 
-  // 1. ดึงข้อมูลจากฐานข้อมูลเมื่อเข้าหน้า Profile
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -51,12 +49,42 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
-  // 2. ฟังก์ชันบันทึกข้อมูลลงฐานข้อมูล
-  const handleSave = async () => {
+  // 🌟 ฟังก์ชันตรวจสอบข้อมูลก่อนบันทึก
+  const validateAndSave = async () => {
+    const updatedData = { ...editProfile };
+    let hasStrictError = false;
+
+    // 1. ตรวจสอบชื่อและอีเมล (ห้ามว่างเด็ดขาด)
+    if (!updatedData.full_name?.trim() || !updatedData.email?.trim()) {
+      updatedData.full_name = profile.full_name;
+      updatedData.email = profile.email;
+      hasStrictError = true;
+    }
+
+    if (hasStrictError) {
+      toast({
+        title: "บันทึกไม่สำเร็จ",
+        description: "ชื่อและอีเมลลบออกไม่ได้ ระบบได้ดึงค่าเดิมกลับมาให้แล้ว",
+        variant: "destructive"
+      });
+      setEditProfile(updatedData);
+      return;
+    }
+
+    // 2. จัดการเรื่องเพศ (ถ้าว่างให้เป็น "ไม่ระบุเพศ")
+    if (!updatedData.gender || updatedData.gender === "") {
+      updatedData.gender = "ไม่ระบุเพศ";
+    }
+
+    // 3. ส่งข้อมูลไปบันทึก
+    handleSave(updatedData);
+  };
+
+  const handleSave = async (dataToSave: typeof editProfile) => {
     try {
-      const response = await api.post("/index.php?page=edit-profile", editProfile);
+      const response = await api.post("/index.php?page=edit-profile", dataToSave);
       if (response.data.status === "success") {
-        setProfile(editProfile);
+        setProfile(dataToSave);
         setIsEditing(false);
         toast({ title: "บันทึกสำเร็จ", description: "ข้อมูลของคุณได้รับการอัปเดตแล้ว" });
       }
@@ -66,375 +94,151 @@ const Profile = () => {
   };
 
   const handleChangePassword = async () => {
-    // 1. Validation ขั้นต้น
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast({ title: "กรุณากรอกข้อมูลให้ครบ", description: "กรุณากรอกรหัสผ่านทุกช่อง", variant: "destructive" });
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast({ title: "รหัสผ่านไม่ตรงกัน", description: "รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน", variant: "destructive" });
+      toast({ title: "รหัสผ่านไม่ตรงกัน", description: "รหัสผ่านใหม่ไม่ตรงกับยืนยัน", variant: "destructive" });
       return;
     }
-    if (newPassword.length < 6) {
-      toast({ title: "รหัสผ่านสั้นเกินไป", description: "รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร", variant: "destructive" });
-      return;
-    }
-
     try {
-      // 2. เรียก API (ส่ง email ไปเป็นตัวระบุตัวตนตาม logic ของ reset-password.php เดิม)
       const response = await api.post("/index.php?page=reset-password", {
-        current_password: currentPassword, // ✅ ส่งรหัสเดิมไปตรวจสอบ
+        current_password: currentPassword,
         new_password: newPassword
       });
-
       if (response.data.status === "success") {
-        // 3. ล้างค่าใน Form และแจ้งเตือน
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        toast({ title: "เปลี่ยนรหัสผ่านสำเร็จ", description: "รหัสผ่านของคุณได้รับการอัปเดตแล้ว" });
+        setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+        toast({ title: "เปลี่ยนรหัสผ่านสำเร็จ" });
       }
     } catch (error: any) {
-      const errorMsg = error.response?.data?.message || "เกิดข้อผิดพลาด";
-      toast({
-        title: "เกิดข้อผิดพลาด",
-        description: errorMsg || "ไม่สามารถเปลี่ยนรหัสผ่านได้",
-        variant: "destructive"
-      });
+      toast({ title: "เกิดข้อผิดพลาด", description: error.response?.data?.message, variant: "destructive" });
     }
   };
 
   const handleLogout = async () => {
-    try {
-      // ✅ เรียก API เพื่อล้าง Session ที่ฝั่ง Backend
-      await api.post("/index.php?page=logout"); 
-    } catch (error) {
-      console.error("Backend logout failed", error);
-    } finally {
-      // ✅ ล้างข้อมูลในเครื่องและพาไปหน้าแรก
-      localStorage.removeItem("user");
-      toast({
-        title: "ออกจากระบบ",
-        description: "คุณได้ออกจากระบบเรียบร้อยแล้ว",
-      });
-      navigate("/");
-    }
+    try { await api.post("/index.php?page=logout"); } catch (e) {}
+    localStorage.removeItem("user");
+    navigate("/");
   };
 
   const genderOptions = ["ชาย", "หญิง", "ไม่ระบุเพศ"];
-  const roleOptions = [
-    { value: "บุคคลทั่วไป", label: "บุคคลทั่วไป" },
-    { value: "อาจารย์", label: "อาจารย์" },
-    { value: "นักศึกษา", label: "นักศึกษา" },
-  ];
-
-  const fields = [
-    { key: "full_name" as const, label: "ชื่อ-นามสกุล", icon: User, type: "text" },
-    { key: "email" as const, label: "อีเมล", icon: Mail, type: "email" },
-  ];
 
   return (
     <PageLayout>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-6"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 pb-20">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/dashboard")} className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <h1 className="font-heading text-2xl font-bold text-foreground">
-            โปรไฟล์
-          </h1>
+          <button onClick={() => navigate("/dashboard")} className="p-2 rounded-full hover:bg-muted"><ArrowLeft className="h-5 w-5" /></button>
+          <h1 className="font-heading text-2xl font-bold">โปรไฟล์</h1>
         </div>
 
-        {/* Avatar section */}
-        <motion.div
-          initial={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          className="flex flex-col items-center gap-3"
-        >
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/20 shadow-lg">
+        {/* Avatar */}
+        <div className="flex flex-col items-center gap-3 py-4">
+          <div className="h-24 w-24 rounded-full bg-primary/20 flex items-center justify-center shadow-inner">
             <UserCircle className="h-16 w-16 text-primary" />
           </div>
-          <p className="font-heading text-lg font-bold text-foreground">{profile.full_name}</p>
-          <p className="text-sm text-muted-foreground">{profile.email}</p>
-        </motion.div>
+          <p className="font-heading text-lg font-bold">{profile.full_name}</p>
+        </div>
 
-        {/* Profile fields */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="glass-card rounded-2xl p-5 shadow-md"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading text-base font-semibold text-foreground">
-              ข้อมูลส่วนตัว
+        {/* Main Info Card */}
+        <div className="glass-card rounded-3xl p-6 shadow-xl border border-white/20">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-heading text-base font-bold flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" /> ข้อมูลทั่วไป
             </h2>
             {!isEditing ? (
-              <button
-                onClick={() => {
-                  setEditProfile(profile);
-                  setIsEditing(true);
-                }}
-                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
-              >
-                <Edit3 className="h-3.5 w-3.5" />
-                แก้ไข
+              <button onClick={() => setIsEditing(true)} className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-4 py-2 rounded-xl transition-all hover:bg-primary/20">
+                <Edit3 className="h-3.5 w-3.5" /> แก้ไข
               </button>
             ) : (
-              <button
-                onClick={handleSave}
-                className="flex items-center gap-1.5 rounded-xl gradient-btn px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-md"
-              >
-                <Save className="h-3.5 w-3.5" />
-                บันทึก
-              </button>
+              <div className="flex gap-2">
+                <button onClick={() => { setIsEditing(false); setEditProfile(profile); }} className="text-xs font-bold text-muted-foreground px-3">ยกเลิก</button>
+                <button onClick={validateAndSave} className="flex items-center gap-1.5 text-xs font-bold bg-primary text-white px-4 py-2 rounded-xl shadow-lg shadow-primary/30">
+                  <Save className="h-3.5 w-3.5" /> บันทึก
+                </button>
+              </div>
             )}
           </div>
 
-          <div className="space-y-4">
-            {fields.map((field, i) => (
-              <motion.div
-                key={field.key}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1.5">
-                  <field.icon className="h-3.5 w-3.5" />
-                  {field.label}
-                </label>
-                {isEditing ? (
-                  <input
-                    type={field.type}
-                    value={editProfile[field.key]}
-                    onChange={(e) =>
-                      setEditProfile({ ...editProfile, [field.key]: e.target.value })
-                    }
-                    className="w-full rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                  />
-                ) : (
-                  <p className="rounded-xl bg-secondary/30 px-4 py-2.5 text-sm font-medium text-foreground">
-                    {profile[field.key]}
-                  </p>
-                )}
-              </motion.div>
-            ))}
-
-            {/* Gender */}
-            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-              <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1.5">
-                <Users className="h-3.5 w-3.5" />
-                เพศ
-              </label>
-              {isEditing ? (
-                <div className="relative">
-                  <select
-                    value={editProfile.gender}
-                    onChange={(e) => setEditProfile({ ...editProfile, gender: e.target.value })}
-                    className="w-full appearance-none rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                  >
-                    <option value="">เลือกเพศ</option>
-                    {genderOptions.map((g) => (
-                      <option key={g} value={g}>{g}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                </div>
-              ) : (
-                <p className="rounded-xl bg-secondary/30 px-4 py-2.5 text-sm font-medium text-foreground">
-                  {profile.gender || "-"}
-                </p>
-              )}
-            </motion.div>
-
-            {/* Age & Height & Weight */}
-            <div className="grid grid-cols-3 gap-3">
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
-                <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1.5">
-                  <Calendar className="h-3.5 w-3.5" />
-                  อายุ
-                </label>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    value={editProfile.age}
-                    onChange={(e) => setEditProfile({ ...editProfile, age: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                  />
-                ) : (
-                  <p className="rounded-xl bg-secondary/30 px-4 py-2.5 text-sm font-medium text-foreground">
-                    {profile.age || "-"}
-                  </p>
-                )}
-              </motion.div>
-
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1.5">
-                  <Ruler className="h-3.5 w-3.5" />
-                  ส่วนสูง (cm)
-                </label>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    value={editProfile.height_cm}
-                    onChange={(e) => setEditProfile({ ...editProfile, height_cm: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                  />
-                ) : (
-                  <p className="rounded-xl bg-secondary/30 px-4 py-2.5 text-sm font-medium text-foreground">
-                    {profile.height_cm || "-"}
-                  </p>
-                )}
-              </motion.div>
-
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 }}>
-                <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1.5">
-                  <Weight className="h-3.5 w-3.5" />
-                  น้ำหนัก (kg)
-                </label>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    value={editProfile.weight_kg}
-                    onChange={(e) => setEditProfile({ ...editProfile, weight_kg: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                  />
-                ) : (
-                  <p className="rounded-xl bg-secondary/30 px-4 py-2.5 text-sm font-medium text-foreground">
-                    {profile.weight_kg || "-"}
-                  </p>
-                )}
-              </motion.div>
+          <div className="space-y-5">
+            {/* Name & Email */}
+            <div className="grid gap-4">
+              <div>
+                <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">ชื่อ-นามสกุล</label>
+                <input disabled={!isEditing} type="text" value={isEditing ? editProfile.full_name : profile.full_name} onChange={(e) => setEditProfile({ ...editProfile, full_name: e.target.value })} className="w-full mt-1 bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 disabled:opacity-70 transition-all" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">อีเมล</label>
+                <input disabled={!isEditing} type="email" value={isEditing ? editProfile.email : profile.email} onChange={(e) => setEditProfile({ ...editProfile, email: e.target.value })} className="w-full mt-1 bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 disabled:opacity-70 transition-all" />
+              </div>
             </div>
 
-            {/* User Role */}
-            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-              <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1.5">
-                <Users className="h-3.5 w-3.5" />
-                ประเภทผู้ใช้
-              </label>
+            {/* Gender Selection */}
+            <div>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">เพศ</label>
               {isEditing ? (
-                <div className="flex gap-3">
-                  {roleOptions.map((r) => (
-                    <label key={r.value} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
-                      <div
-                        className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${
-                          editProfile.user_role === r.value
-                            ? "border-primary bg-primary"
-                            : "border-border"
-                        }`}
-                      >
-                        {editProfile.user_role === r.value && (
-                          <svg className="h-3 w-3 text-primary-foreground" viewBox="0 0 12 12" fill="none">
-                            <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </div>
-                      <input
-                        type="radio"
-                        name="role"
-                        value={r.value}
-                        checked={editProfile.user_role === r.value}
-                        onChange={(e) => setEditProfile({ ...editProfile, user_role: e.target.value })}
-                        className="sr-only"
-                      />
-                      {r.label}
-                    </label>
-                  ))}
+                <div className="relative mt-1">
+                  <select value={editProfile.gender} onChange={(e) => setEditProfile({ ...editProfile, gender: e.target.value })} className="w-full appearance-none bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50">
+                    <option value="">เลือกเพศ</option>
+                    {genderOptions.map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 </div>
               ) : (
-                <p className="rounded-xl bg-secondary/30 px-4 py-2.5 text-sm font-medium text-foreground">
-                  {profile.user_role || "-"}
-                </p>
+                <div className="mt-1 bg-secondary/10 rounded-2xl px-4 py-3 text-sm font-medium">{profile.gender || "ไม่ระบุเพศ"}</div>
               )}
-            </motion.div>
+            </div>
+
+            {/* Numbers Row */}
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">อายุ</label>
+                <input disabled={!isEditing} type="number" value={isEditing ? (editProfile.age === 0 ? "" : editProfile.age) : (profile.age === 0 ? "-" : profile.age)} onChange={(e) => setEditProfile({ ...editProfile, age: e.target.value === "" ? 0 : Number(e.target.value) })} className="w-full mt-1 bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm text-center" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">สูง (cm)</label>
+                <input disabled={!isEditing} type="number" value={isEditing ? (editProfile.height_cm === 0 ? "" : editProfile.height_cm) : (profile.height_cm === 0 ? "-" : profile.height_cm)} onChange={(e) => setEditProfile({ ...editProfile, height_cm: e.target.value === "" ? 0 : Number(e.target.value) })} className="w-full mt-1 bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm text-center" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">หนัก (kg)</label>
+                <input disabled={!isEditing} type="number" value={isEditing ? (editProfile.weight_kg === 0 ? "" : editProfile.weight_kg) : (profile.weight_kg === 0 ? "-" : profile.weight_kg)} onChange={(e) => setEditProfile({ ...editProfile, weight_kg: e.target.value === "" ? 0 : Number(e.target.value) })} className="w-full mt-1 bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm text-center" />
+              </div>
+            </div>
+
+            {/* Role - Locked */}
+            <div className="pt-2">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1 flex items-center gap-1">
+                <Users className="h-3 w-3" /> ประเภทผู้ใช้ (เปลี่ยนไม่ได้)
+              </label>
+              <div className="mt-1 bg-muted/40 border border-dashed border-border rounded-2xl px-4 py-3 text-sm text-muted-foreground font-semibold">
+                {profile.user_role}
+              </div>
+            </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Change Password */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="glass-card rounded-2xl p-5 shadow-md"
-        >
-          <h2 className="font-heading text-base font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Lock className="h-5 w-5 text-primary" />
-            แก้ไขรหัสผ่าน
+        <div className="glass-card rounded-3xl p-6 shadow-xl border border-white/20">
+          <h2 className="font-heading text-base font-bold mb-4 flex items-center gap-2">
+            <Lock className="h-4 w-4 text-primary" /> แก้ไขรหัสผ่าน
           </h2>
-          <div className="space-y-4">
-            {/* Current Password */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">รหัสผ่านปัจจุบัน</label>
-              <div className="relative">
-                <input
-                  type={showCurrent ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="กรอกรหัสผ่านปัจจุบัน"
-                  className="w-full rounded-xl border border-border bg-secondary/50 px-4 py-2.5 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                />
-                <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+          <div className="space-y-3">
+            <div className="relative">
+              <input type={showCurrent ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="รหัสผ่านปัจจุบัน" className="w-full bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm pr-12" />
+              <button onClick={() => setShowCurrent(!showCurrent)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">{showCurrent ? <EyeOff size={16}/> : <Eye size={16}/>}</button>
             </div>
-            {/* New Password */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">รหัสผ่านใหม่</label>
-              <div className="relative">
-                <input
-                  type={showNew ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="กรอกรหัสผ่านใหม่"
-                  className="w-full rounded-xl border border-border bg-secondary/50 px-4 py-2.5 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                />
-                <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+            <div className="relative">
+              <input type={showNew ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="รหัสผ่านใหม่" className="w-full bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm pr-12" />
+              <button onClick={() => setShowNew(!showNew)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">{showNew ? <EyeOff size={16}/> : <Eye size={16}/>}</button>
             </div>
-            {/* Confirm New Password */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">ยืนยันรหัสผ่านใหม่</label>
-              <div className="relative">
-                <input
-                  type={showConfirm ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
-                  className="w-full rounded-xl border border-border bg-secondary/50 px-4 py-2.5 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                />
-                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-            <button
-              onClick={handleChangePassword}
-              className="w-full rounded-xl gradient-btn py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:shadow-lg"
-            >
-              เปลี่ยนรหัสผ่าน
-            </button>
+            <button onClick={handleChangePassword} className="w-full mt-2 bg-primary text-white font-bold py-3 rounded-2xl shadow-lg shadow-primary/20 transition-all active:scale-95">เปลี่ยนรหัสผ่าน</button>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Logout button */}
-        <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/30 bg-destructive/10 py-3.5 text-sm font-semibold text-destructive hover:bg-destructive/20 transition-all"
-        >
-          <LogOut className="h-4 w-4" />
-          ออกจากระบบ
-        </motion.button>
+        {/* Logout */}
+        <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-4 text-destructive font-bold text-sm bg-destructive/10 rounded-3xl border border-destructive/20 hover:bg-destructive/20 transition-all">
+          <LogOut size={18} /> ออกจากระบบ
+        </button>
       </motion.div>
     </PageLayout>
   );
