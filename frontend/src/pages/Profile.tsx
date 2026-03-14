@@ -105,24 +105,48 @@ const Profile = () => {
   };
 
   const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword) {
-      toast({ title: "กรุณากรอกข้อมูลให้ครบ", variant: "destructive" });
-      return;
-    }
-    try {
-      const response = await api.post("/index.php?page=change-password", {
-        current_password: currentPassword,
-        new_password: newPassword
+  // 1. ตรวจสอบว่ากรอกข้อมูลหรือยัง
+  if (!currentPassword || !newPassword) {
+    toast({
+      title: "กรุณากรอกข้อมูลให้ครบถ้วน",
+      description: "กรุณากรอกทั้งรหัสผ่านปัจจุบันและรหัสผ่านใหม่",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  try {
+    // 2. ยิง API ไปที่ Backend (index.php พร้อมส่ง query page)
+    const response = await api.post("/index.php?page=change-password", {
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    });
+
+    // 3. เช็คผลลัพธ์จาก Backend
+    if (response.data.status === "success") {
+      toast({
+        title: "สำเร็จ!",
+        description: "เปลี่ยนรหัสผ่านเรียบร้อยแล้ว",
       });
-      if (response.data.status === "success") {
-        setCurrentPassword(""); setNewPassword("");
-        toast({ title: "เปลี่ยนรหัสผ่านสำเร็จ" });
-      }
-    } catch (error: any) {
-      console.error("Change password error:", error);
-      toast({ title: "เกิดข้อผิดพลาด", description: error.response?.data?.message, variant: "destructive" });
+      // ล้างช่องกรอกข้อมูล
+      setCurrentPassword("");
+      setNewPassword("");
+    } else {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: response.data.message || "รหัสผ่านปัจจุบันไม่ถูกต้อง",
+        variant: "destructive",
+      });
     }
-  };
+  } catch (error: any) {
+    console.error("Error:", error);
+    toast({
+      title: "เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว",
+      description: error.response?.data?.message || "กรุณาลองใหม่อีกครั้ง",
+      variant: "destructive",
+    });
+  }
+};
 
   const handleLogout = async () => {
     try { await api.post("/index.php?page=logout"); } catch (e) {}
