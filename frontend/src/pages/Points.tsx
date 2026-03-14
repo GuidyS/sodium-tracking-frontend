@@ -117,66 +117,55 @@ const Points = () => {
         </div>
 
         {/* ปฏิทินสะสมแต้ม */}
-        <div className="glass-card rounded-3xl p-6 shadow-xl border border-white/20 bg-white/50 max-w-md mx-auto md:max-w-lg">
+        <div className="glass-card rounded-3xl p-6 shadow-xl border border-white/20 bg-white/50 w-full"> 
           <div className="flex items-center justify-between mb-8">
             <h2 className="font-heading text-base font-bold flex items-center gap-2">
               <Star className="text-orange-500 fill-orange-500" size={18} /> ตารางสะสมแต้ม
             </h2>
             <div className="flex items-center gap-4 bg-secondary/50 px-3 py-1.5 rounded-xl">
-              <button onClick={() => setCurrentDate(new Date(currentYear, currentMonth - 1))} className="hover:text-primary"><ChevronLeft size={20}/></button>
+              <button onClick={() => setCurrentDate(new Date(currentYear, currentMonth - 1))} className="hover:text-primary transition-colors"><ChevronLeft size={20}/></button>
               <span className="text-sm font-bold min-w-[100px] text-center">
                 {currentDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}
               </span>
-              <button onClick={() => setCurrentDate(new Date(currentYear, currentMonth + 1))} className="hover:text-primary"><ChevronRight size={20}/></button>
+              <button onClick={() => setCurrentDate(new Date(currentYear, currentMonth + 1))} className="hover:text-primary transition-colors"><ChevronRight size={20}/></button>
             </div>
           </div>
-
+        
+          {/* ส่วนหัววันในสัปดาห์ */}
           <div className="grid grid-cols-7 gap-1 mb-2">
             {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map(d => (
               <div key={d} className="text-center text-[10px] font-bold text-muted-foreground py-2 uppercase tracking-tighter">{d}</div>
             ))}
           </div>
-
-          <div className="grid grid-cols-7 gap-2">
+        
+          {/* ช่องวันที่ในปฏิทิน */}
+          <div className="grid grid-cols-7 gap-1.5 md:gap-3"> 
+            {/* 🌟 เพิ่ม gap เล็กน้อยในจอใหญ่เพื่อให้ดูโปร่งขึ้นเมื่อตารางกว้างขึ้น */}
             {blanks.map(i => <div key={`b-${i}`} />)}
             {daysArray.map((d) => {
               const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
               
-              // 🌟 เช็คว่าเป็นวันที่ปัจจุบันหรือไม่
               const today = new Date();
-              const isToday = 
-                d === today.getDate() && 
-                currentMonth === today.getMonth() && 
-                currentYear === today.getFullYear();
-            
+              const isToday = d === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
               const isTracked = logs.includes(dateStr); 
               const showStar = pointDates.includes(d);
-            
+        
               return (
                 <div key={d} className="relative aspect-square p-0.5">
                   <div className={`w-full h-full rounded-xl flex items-center justify-center transition-all duration-300 ${
-                    isToday 
-                      ? "ring-2 ring-primary ring-offset-2 shadow-lg scale-105 z-10" // วันปัจจุบัน: มีขอบเน้นและขยายเล็กน้อย
-                      : ""
+                    isToday ? "ring-2 ring-primary ring-offset-2 z-10 scale-105" : ""
                   } ${
                     isTracked 
-                      ? "bg-emerald-500 text-white font-bold shadow-md" // วันที่บันทึกแล้ว: สีเขียว
-                      : "bg-secondary/30 text-muted-foreground/40"    // วันที่ว่าง: สีเทาจาง
+                      ? "bg-emerald-500 text-white font-bold shadow-md" 
+                      : "bg-secondary/20 text-muted-foreground/40 hover:bg-secondary/40"
                   }`}>
-                    
-                    {/* ถ้าเป็นวันปัจจุบันและยังไม่ได้บันทึก อาจจะใส่สีพื้นหลังอ่อนๆ ให้รู้ตัว */}
-                    <div className={`absolute inset-0 rounded-xl ${isToday && !isTracked ? "bg-primary/10" : ""}`} />
-            
-                    <span className={`relative z-10 text-xs ${isToday && !isTracked ? "text-primary font-bold" : ""}`}>
-                      {d}
-                    </span>
-            
+                    <span className="text-xs md:text-sm relative z-10">{d}</span>
                     {showStar && (
                       <motion.div 
                         initial={{ scale: 0 }} animate={{ scale: 1 }}
-                        className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm z-20"
+                        className="absolute -top-1.5 -right-1.5 bg-white rounded-full p-0.5 shadow-md z-20"
                       >
-                        <Star size={14} className="text-yellow-400 fill-yellow-400" />
+                        <Star size={12} className="text-yellow-400 fill-yellow-400 md:w-4 md:h-4" />
                       </motion.div>
                     )}
                   </div>
@@ -185,15 +174,15 @@ const Points = () => {
             })}
           </div>
           
-          {/* คำอธิบายสัญลักษณ์ */}
-        <div className="mt-8 pt-4 border-t border-border/50 flex justify-between items-center text-[10px] text-muted-foreground font-medium">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded bg-emerald-500" />
+          {/* คำอธิบายสัญลักษณ์ (ชิดซ้าย-ขวา) */}
+          <div className="mt-8 pt-6 border-t border-border/50 flex justify-between items-center text-[10px] md:text-xs text-muted-foreground font-medium">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-md bg-emerald-500 shadow-sm" />
               <span>มีการบันทึกอาหาร</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded bg-white border border-gray-200 flex items-center justify-center">
-                <Star size={8} className="text-yellow-400 fill-yellow-400" />
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-md bg-white border border-gray-200 flex items-center justify-center shadow-sm">
+                <Star size={10} className="text-yellow-400 fill-yellow-400" />
               </div>
               <span>ได้รับแต้ม (3 วัน/แบบทดสอบ)</span>
             </div>
