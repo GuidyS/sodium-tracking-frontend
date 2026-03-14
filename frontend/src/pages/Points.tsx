@@ -151,8 +151,8 @@ const Points = () => {
               const showStar = pointDates.includes(d);
         
               return (
-                <div key={d} className="relative aspect-square p-0.5">
-                  <div className={`w-full py-2 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                <div key={d} className="relative h-10 md:h-12 p-0.5">
+                  <div className={`w-full h-full rounded-xl flex items-center justify-center transition-all duration-300 ${
                     isToday ? "ring-2 ring-primary ring-offset-2 z-10 scale-105" : ""
                   } ${
                     isTracked 
