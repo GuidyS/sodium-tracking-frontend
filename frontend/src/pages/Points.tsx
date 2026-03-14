@@ -141,21 +141,40 @@ const Points = () => {
             {blanks.map(i => <div key={`b-${i}`} />)}
             {daysArray.map((d) => {
               const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+              
+              // 🌟 เช็คว่าเป็นวันที่ปัจจุบันหรือไม่
+              const today = new Date();
+              const isToday = 
+                d === today.getDate() && 
+                currentMonth === today.getMonth() && 
+                currentYear === today.getFullYear();
+            
               const isTracked = logs.includes(dateStr); 
               const showStar = pointDates.includes(d);
-
+            
               return (
                 <div key={d} className="relative aspect-square p-1">
                   <div className={`w-full h-full rounded-xl flex items-center justify-center transition-all duration-300 ${
+                    isToday 
+                      ? "ring-2 ring-primary ring-offset-2 shadow-lg scale-105 z-10" // วันปัจจุบัน: มีขอบเน้นและขยายเล็กน้อย
+                      : ""
+                  } ${
                     isTracked 
-                      ? "bg-emerald-500 text-white font-bold shadow-md scale-105" 
-                      : "bg-secondary/30 text-muted-foreground/40"
+                      ? "bg-emerald-500 text-white font-bold shadow-md" // วันที่บันทึกแล้ว: สีเขียว
+                      : "bg-secondary/30 text-muted-foreground/40"    // วันที่ว่าง: สีเทาจาง
                   }`}>
-                    <span className="text-xs">{d}</span>
+                    
+                    {/* ถ้าเป็นวันปัจจุบันและยังไม่ได้บันทึก อาจจะใส่สีพื้นหลังอ่อนๆ ให้รู้ตัว */}
+                    <div className={`absolute inset-0 rounded-xl ${isToday && !isTracked ? "bg-primary/10" : ""}`} />
+            
+                    <span className={`relative z-10 text-xs ${isToday && !isTracked ? "text-primary font-bold" : ""}`}>
+                      {d}
+                    </span>
+            
                     {showStar && (
                       <motion.div 
                         initial={{ scale: 0 }} animate={{ scale: 1 }}
-                        className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm"
+                        className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm z-20"
                       >
                         <Star size={14} className="text-yellow-400 fill-yellow-400" />
                       </motion.div>
