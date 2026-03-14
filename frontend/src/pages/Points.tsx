@@ -28,6 +28,8 @@ const Points = () => {
       const res = await api.get("/index.php?page=food-log&action=daily_all");
       if (res.data.status === "success") {
         const allLogs = res.data.data || [];
+        const loggedDates = allLogs.filter(log => log.total_sodium_daily > 0).map(log => log.log_date);
+         setLogs(loggedDates);
         const tempTrackedDays = new Set<number>();
         const tempPointDates: number[] = [];
 
@@ -139,28 +141,29 @@ const Points = () => {
 
           <div className="grid grid-cols-7 gap-2">
             {blanks.map(i => <div key={`b-${i}`} />)}
-            {days.map(d => {
-              const isTracked = trackedDays.has(d);
-              // นับจำนวนดาวในวันนี้ (เผื่อวันเดียวได้หลายดวง เช่น ทำ Pretest + ครบ 3 วันพอดี)
-              const starsInDay = pointDates.filter(pd => pd === d).length;
+              {daysInMonth.map((d) => {
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const isTracked = logs.includes(dateStr); // ข้อ 2: เช็คเพื่อมาร์คสีเขียว
+                
+                // ข้อ 3: ลอจิกแสดงดาว (สมมติว่านับจากลำดับวันที่มีการบันทึก)
+                const dayIndex = logs.indexOf(dateStr) + 1;
+                const showStar = isTracked && dayIndex > 0 && dayIndex % 3 === 0;
               
-              return (
-                <div key={d} className="relative aspect-square flex items-center justify-center">
-                  <div className={`w-full h-full rounded-xl flex flex-col items-center justify-center transition-all duration-300 ${
-                    isTracked ? "bg-emerald-100 text-emerald-700 font-bold" : "text-muted-foreground/50"
-                  }`}>
-                    <span className="text-xs">{d}</span>
-                    {starsInDay > 0 && (
-                      <div className="absolute -top-1 -right-1 flex gap-0.5">
-                        {Array.from({ length: starsInDay }).map((_, idx) => (
-                          <Star key={idx} size={10} className="text-orange-500 fill-orange-500 animate-bounce" style={{ animationDelay: `${idx * 0.1}s` }} />
-                        ))}
-                      </div>
-                    )}
+                return (
+                  <div key={d} className="relative aspect-square p-1">
+                    <div className={`w-full h-full rounded-xl flex items-center justify-center transition-all ${
+                      isTracked ? "bg-emerald-500 text-white shadow-sm" : "bg-secondary/20 text-muted-foreground"
+                    }`}>
+                      <span className="text-xs font-medium">{d}</span>
+                      {showStar && (
+                        <div className="absolute -top-1 -right-1">
+                          <Star size={14} className="text-yellow-400 fill-yellow-400 filter drop-shadow-sm animate-pulse" />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
           
           {/* คำอธิบายสัญลักษณ์ */}
