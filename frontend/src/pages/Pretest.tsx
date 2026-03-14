@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, ChevronRight, ChevronLeft } from "lucide-react";
+import { CheckCircle2, ChevronRight, ChevronLeft, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/axios";
 
@@ -117,6 +117,11 @@ const Pretest = () => {
 
   const q = questions[current];
 
+  const score = answers.reduce<number>(
+    (acc, ans, i) => acc + (ans === questions[i].correctIndex ? 1 : 0),
+    0
+  );
+
   const selectAnswer = (choiceIndex: number) => {
     if (submitted) return;
     const newAnswers = [...answers];
@@ -139,39 +144,32 @@ const Pretest = () => {
   };
 
   const handleSubmit = async () => {
-  // ดึงข้อมูล user จาก localStorage
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-  try {
-    const res = await api.post("/index.php?page=food-log&action=submit_test", {
-      test_type: "pre",
-      score: score,
-      user_id: user.user_id // ส่ง ID ไปสำรองในกรณี Session หาไม่เจอ
-    });
-      
-      // ✅ 3. จัดการกรณี Success และ Error ตามสถานะที่ PHP ส่งมา
+    try {
+      const res = await api.post("/index.php?page=food-log&action=submit_test", {
+        test_type: "pre",
+        score: score,
+        user_id: user.user_id
+      });
+
       if (res.data.status === "success") {
         toast({
           title: "บันทึกสำเร็จ",
-          description: res.data.message, // "ได้รับ 1 แต้มเรียบร้อยแล้ว"
+          description: res.data.message,
         });
 
-        // อัปเดตสถานะใน localStorage เพื่อให้ระบบรู้ว่าทำเสร็จแล้ว
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-        user.pretest_done = 1;
-        localStorage.setItem("user", JSON.stringify(user));
-
+        const updatedUser = { ...user, pretest_done: 1 };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
         setSubmitted(true);
       } else {
-        // กรณี Error ที่ส่งมาจาก PHP (เช่น วันไม่ตรง หรือเคยทำไปแล้ว)
         toast({
           variant: "destructive",
           title: "ไม่สามารถบันทึกได้",
-          description: res.data.message, // จะแสดง "ไม่อยู่ในช่วงเวลาที่กำหนด" หรือ "คุณเคยรับแต้มส่วนนี้ไปแล้ว"
+          description: res.data.message,
         });
       }
     } catch (err: any) {
-      // กรณี Error จากระบบ (เช่น ลืม Login หรือ Server ล่ม)
       const errMsg = err.response?.data?.message || "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์";
       toast({
         variant: "destructive",
@@ -184,11 +182,6 @@ const Pretest = () => {
   const handleFinish = () => {
     navigate("/splash");
   };
-
-  const score = answers.reduce<number>(
-    (acc, ans, i) => acc + (ans === questions[i].correctIndex ? 1 : 0),
-    0
-  );
 
   const allAnswered = answers.every((a) => a !== null);
   const progress = ((current + 1) / questions.length) * 100;
@@ -222,22 +215,24 @@ const Pretest = () => {
           </div>
 
           <div className="bg-muted/50 rounded-2xl p-4 text-left space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">สรุปผลรายข้อ</p>
             {questions.map((qq, i) => {
               const isCorrect = answers[i] === qq.correctIndex;
               return (
-                <div key={qq.id} className="flex items-start gap-2 text-sm">
-                  <span
-                    className={`mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
-                      isCorrect
-                        ? "bg-green-500/20 text-green-600"
-                        : "bg-destructive/20 text-destructive"
-                    }`}
-                  >
-                    {i + 1}
-                  </span>
-                  <span className="text-muted-foreground leading-tight">
-                    {isCorrect ? "ถูกต้อง" : `เฉลย: ${choiceLabels[qq.correctIndex]}. ${qq.choices[qq.correctIndex]}`}
-                  </span>
+                <div key={qq.id} className="flex items-center justify-between py-1 border-b border-border/50 last:border-0">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-muted-foreground w-5">
+                      {i + 1}.
+                    </span>
+                    <span className={`text-sm font-medium ${isCorrect ? "text-green-600" : "text-destructive"}`}>
+                      {isCorrect ? "ถูกต้อง" : "ไม่ถูกต้อง"}
+                    </span>
+                  </div>
+                  {isCorrect ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-destructive" />
+                  )}
                 </div>
               );
             })}
@@ -246,7 +241,7 @@ const Pretest = () => {
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={handleFinish}
-            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-lg shadow-lg"
+            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-lg shadow-lg hover:bg-primary/90 transition-colors"
           >
             เข้าสู่แอปพลิเคชัน
           </motion.button>
@@ -276,7 +271,7 @@ const Pretest = () => {
         </div>
       </div>
 
-      {/* Question */}
+      {/* Question Area */}
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full px-4 py-6">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
@@ -288,7 +283,7 @@ const Pretest = () => {
             transition={{ duration: 0.25 }}
             className="flex-1 space-y-5"
           >
-            <div className="glass-card rounded-2xl p-5">
+            <div className="glass-card rounded-2xl p-5 border border-primary/10">
               <p className="text-base font-semibold text-foreground leading-relaxed">
                 <span className="text-primary font-bold mr-1">ข้อ {q.id}.</span>
                 {q.question}
@@ -305,7 +300,7 @@ const Pretest = () => {
                     onClick={() => selectAnswer(ci)}
                     className={`w-full text-left px-4 py-3.5 rounded-xl border-2 transition-all duration-200 flex items-start gap-3 ${
                       selected
-                        ? "border-primary bg-primary/10 shadow-md"
+                        ? "border-primary bg-primary/10 shadow-sm"
                         : "border-border bg-card hover:border-primary/40"
                     }`}
                   >
@@ -328,7 +323,7 @@ const Pretest = () => {
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation */}
+        {/* Navigation Buttons */}
         <div className="flex items-center justify-between mt-6 gap-3">
           <motion.button
             whileTap={{ scale: 0.95 }}
@@ -345,7 +340,7 @@ const Pretest = () => {
               whileTap={{ scale: 0.95 }}
               onClick={handleSubmit}
               disabled={!allAnswered}
-              className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-lg disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-lg disabled:opacity-50 hover:bg-primary/90 transition-colors"
             >
               ส่งคำตอบ
             </motion.button>
