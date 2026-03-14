@@ -166,7 +166,7 @@ const Points = () => {
                     isToday ? "ring-2 ring-primary ring-offset-2 z-10 scale-105" : ""
                   } ${
                     isTracked 
-                      ? "bg-emerald-500 text-white font-bold shadow-md" 
+                      ? "bg-emerald-800 text-white font-bold shadow-md" 
                       : "bg-secondary/20 text-muted-foreground/70 hover:bg-secondary/40"
                   }`}>
                     <span className="text-xs md:text-sm relative z-10">{d}</span>
