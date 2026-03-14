@@ -18,7 +18,6 @@ const Profile = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
   const [profile, setProfile] = useState({
     full_name: "",
@@ -52,31 +51,42 @@ const Profile = () => {
   // 🌟 ฟังก์ชันตรวจสอบข้อมูลก่อนบันทึก
   const validateAndSave = async () => {
     const updatedData = { ...editProfile };
-    let hasStrictError = false;
+    let errorMessages: string[] = [];
 
-    // 1. ตรวจสอบชื่อและอีเมล (ห้ามว่างเด็ดขาด)
-    if (!updatedData.full_name?.trim() || !updatedData.email?.trim()) {
-      updatedData.full_name = profile.full_name;
-      updatedData.email = profile.email;
-      hasStrictError = true;
+    // 1. ตรวจสอบชื่อและอีเมล (ห้ามว่าง)
+    if (!updatedData.full_name?.trim()) errorMessages.push("กรุณากรอกชื่อ-นามสกุล");
+    if (!updatedData.email?.trim()) errorMessages.push("กรุณากรอกอีเมล");
+
+    // 2. ตรวจสอบ อายุ (ห้ามว่าง, ต่ำกว่า 1)
+    if (updatedData.age === null || updatedData.age === "" || Number(updatedData.age) < 1) {
+      errorMessages.push("อายุต้องไม่ต่ำกว่า 1 ปี");
     }
 
-    if (hasStrictError) {
+    // 3. ตรวจสอบ ส่วนสูง (ห้ามว่าง, ต่ำกว่า 100)
+    if (updatedData.height_cm === null || updatedData.height_cm === "" || Number(updatedData.height_cm) < 100) {
+      errorMessages.push("ส่วนสูงต้องไม่ต่ำกว่า 100 cm");
+    }
+
+    // 4. ตรวจสอบ น้ำหนัก (ห้ามว่าง, ต่ำกว่า 10)
+    if (updatedData.weight_kg === null || updatedData.weight_kg === "" || Number(updatedData.weight_kg) < 10) {
+      errorMessages.push("น้ำหนักต้องไม่ต่ำกว่า 10 kg");
+    }
+
+    // หากมี Error ให้แจ้งเตือนและหยุดการบันทึก
+    if (errorMessages.length > 0) {
       toast({
-        title: "บันทึกไม่สำเร็จ",
-        description: "ชื่อและอีเมลลบออกไม่ได้ ระบบได้ดึงค่าเดิมกลับมาให้แล้ว",
+        title: "ข้อมูลไม่ถูกต้อง",
+        description: errorMessages[0],
         variant: "destructive"
       });
-      setEditProfile(updatedData);
       return;
     }
 
-    // 2. จัดการเรื่องเพศ (ถ้าว่างให้เป็น "ไม่ระบุเพศ")
+    // 5. จัดการเรื่องเพศ (ถ้าว่างให้เป็น "ไม่ระบุเพศ")
     if (!updatedData.gender || updatedData.gender === "") {
       updatedData.gender = "ไม่ระบุเพศ";
     }
 
-    // 3. ส่งข้อมูลไปบันทึก
     handleSave(updatedData);
   };
 
@@ -88,18 +98,15 @@ const Profile = () => {
         setIsEditing(false);
         toast({ title: "บันทึกสำเร็จ", description: "ข้อมูลของคุณได้รับการอัปเดตแล้ว" });
       }
-    } catch (error) {
-      toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถบันทึกข้อมูลได้", variant: "destructive" });
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || "ไม่สามารถบันทึกข้อมูลได้";
+      toast({ title: "เกิดข้อผิดพลาด", description: errorMsg, variant: "destructive" });
     }
   };
 
   const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      toast({ title: "กรุณากรอกข้อมูลให้ครบ", description: "กรุณากรอกรหัสผ่านทุกช่อง", variant: "destructive" });
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast({ title: "รหัสผ่านไม่ตรงกัน", description: "รหัสผ่านใหม่ไม่ตรงกับยืนยัน", variant: "destructive" });
+    if (!currentPassword || !newPassword) {
+      toast({ title: "กรุณากรอกข้อมูลให้ครบ", variant: "destructive" });
       return;
     }
     try {
@@ -108,7 +115,7 @@ const Profile = () => {
         new_password: newPassword
       });
       if (response.data.status === "success") {
-        setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+        setCurrentPassword(""); setNewPassword("");
         toast({ title: "เปลี่ยนรหัสผ่านสำเร็จ" });
       }
     } catch (error: any) {
@@ -132,7 +139,7 @@ const Profile = () => {
           <h1 className="font-heading text-2xl font-bold">โปรไฟล์</h1>
         </div>
 
-        {/* Avatar */}
+        {/* Avatar Section */}
         <div className="flex flex-col items-center gap-3 py-4">
           <div className="h-24 w-24 rounded-full bg-primary/20 flex items-center justify-center shadow-inner">
             <UserCircle className="h-16 w-16 text-primary" />
@@ -140,7 +147,7 @@ const Profile = () => {
           <p className="font-heading text-lg font-bold">{profile.full_name}</p>
         </div>
 
-        {/* Main Info Card */}
+        {/* Info Card */}
         <div className="glass-card rounded-3xl p-6 shadow-xl border border-white/20">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-heading text-base font-bold flex items-center gap-2">
@@ -161,7 +168,6 @@ const Profile = () => {
           </div>
 
           <div className="space-y-5">
-            {/* Name & Email */}
             <div className="grid gap-4">
               <div>
                 <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">ชื่อ-นามสกุล</label>
@@ -173,7 +179,6 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Gender Selection */}
             <div>
               <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">เพศ</label>
               {isEditing ? (
@@ -189,23 +194,21 @@ const Profile = () => {
               )}
             </div>
 
-            {/* Numbers Row */}
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">อายุ</label>
-                <input disabled={!isEditing} type="number" value={isEditing ? (editProfile.age === 0 ? "" : editProfile.age) : (profile.age === 0 ? "-" : profile.age)} onChange={(e) => setEditProfile({ ...editProfile, age: e.target.value === "" ? 0 : Number(e.target.value) })} className="w-full mt-1 bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm text-center" />
+                <input disabled={!isEditing} type="number" value={isEditing ? (editProfile.age === 0 ? "" : editProfile.age) : (profile.age === 0 ? "-" : profile.age)} onChange={(e) => setEditProfile({ ...editProfile, age: e.target.value === "" ? "" as any : Number(e.target.value) })} className="w-full mt-1 bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm text-center" />
               </div>
               <div>
                 <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">สูง (cm)</label>
-                <input disabled={!isEditing} type="number" value={isEditing ? (editProfile.height_cm === 0 ? "" : editProfile.height_cm) : (profile.height_cm === 0 ? "-" : profile.height_cm)} onChange={(e) => setEditProfile({ ...editProfile, height_cm: e.target.value === "" ? 0 : Number(e.target.value) })} className="w-full mt-1 bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm text-center" />
+                <input disabled={!isEditing} type="number" value={isEditing ? (editProfile.height_cm === 0 ? "" : editProfile.height_cm) : (profile.height_cm === 0 ? "-" : profile.height_cm)} onChange={(e) => setEditProfile({ ...editProfile, height_cm: e.target.value === "" ? "" as any : Number(e.target.value) })} className="w-full mt-1 bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm text-center" />
               </div>
               <div>
                 <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">หนัก (kg)</label>
-                <input disabled={!isEditing} type="number" value={isEditing ? (editProfile.weight_kg === 0 ? "" : editProfile.weight_kg) : (profile.weight_kg === 0 ? "-" : profile.weight_kg)} onChange={(e) => setEditProfile({ ...editProfile, weight_kg: e.target.value === "" ? 0 : Number(e.target.value) })} className="w-full mt-1 bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm text-center" />
+                <input disabled={!isEditing} type="number" value={isEditing ? (editProfile.weight_kg === 0 ? "" : editProfile.weight_kg) : (profile.weight_kg === 0 ? "-" : profile.weight_kg)} onChange={(e) => setEditProfile({ ...editProfile, weight_kg: e.target.value === "" ? "" as any : Number(e.target.value) })} className="w-full mt-1 bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm text-center" />
               </div>
             </div>
 
-            {/* Role - Locked */}
             <div className="pt-2">
               <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1 flex items-center gap-1">
                 <Users className="h-3 w-3" /> ประเภทผู้ใช้ (เปลี่ยนไม่ได้)
