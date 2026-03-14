@@ -122,6 +122,11 @@ const Profile = () => {
   };
 
   const genderOptions = ["ชาย", "หญิง", "ไม่ระบุเพศ"];
+  const roleOptions = [
+    { value: "บุคคลทั่วไป", label: "บุคคลทั่วไป" },
+    { value: "อาจารย์", label: "อาจารย์" },
+    { value: "นักศึกษา", label: "นักศึกษา" },
+  ];
 
   const fields = [
     { key: "full_name" as const, label: "ชื่อ-นามสกุล", icon: User, type: "text" },
@@ -306,7 +311,49 @@ const Profile = () => {
               </motion.div>
             </div>
 
-            
+            {/* User Role */}
+            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+              <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1.5">
+                <Users className="h-3.5 w-3.5" />
+                ประเภทผู้ใช้
+              </label>
+              {isEditing ? (
+                <div className="flex gap-3">
+                  {roleOptions.map((r) => (
+                    <label key={r.value} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                      <div
+                        className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${
+                          editProfile.user_role === r.value
+                            ? "border-primary bg-primary"
+                            : "border-border"
+                        }`}
+                      >
+                        {editProfile.user_role === r.value && (
+                          <svg className="h-3 w-3 text-primary-foreground" viewBox="0 0 12 12" fill="none">
+                            <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
+                      <input
+                        type="radio"
+                        name="role"
+                        value={r.value}
+                        checked={editProfile.user_role === r.value}
+                        onChange={(e) => setEditProfile({ ...editProfile, user_role: e.target.value })}
+                        className="sr-only"
+                      />
+                      {r.label}
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-xl bg-secondary/30 px-4 py-2.5 text-sm font-medium text-foreground">
+                  {profile.user_role || "-"}
+                </p>
+              )}
+            </motion.div>
+          </div>
+        </motion.div>
 
         {/* Change Password */}
         <motion.div
