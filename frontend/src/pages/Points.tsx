@@ -32,8 +32,11 @@ const Points = () => {
         
         // เก็บวันที่สำหรับมาร์คสีเขียว
         const loggedDatesStr = validLogs
-          .filter((log: any) => log.total_sodium_daily > 0)
-          .map((log: any) => log.log_date);
+          .filter((log: any) => Number(log.total_sodium_daily) > 0)
+          .map((log: any) => {
+            // ป้องกันกรณีวันที่ส่งมาเป็น DateTime (มีเวลาติดมา) ให้ตัดเอาแค่ YYYY-MM-DD
+            return log.log_date.split(' ')[0]; 
+          });
         setLogs(loggedDatesStr);
 
         const tempPointDates: number[] = [];
@@ -147,7 +150,7 @@ const Points = () => {
               
               const today = new Date();
               const isToday = d === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
-              const isTracked = logs.includes(dateStr); 
+              const isTracked = logs.includes(dateStr);
               const showStar = pointDates.includes(d);
         
               return (
