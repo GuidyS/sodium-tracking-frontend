@@ -36,7 +36,8 @@ const Points = () => {
           // ตัดเอาแค่ YYYY-MM-DD เผื่อกรณี API ส่งเวลาติดมา
           return log.log_date.split(' ')[0]; 
         });
-      
+
+      console.log("วันที่ที่มีการบันทึก (logs):", loggedDatesStr); // 👈 เพิ่มบรรทัดนี้ดูใน Console (F12)
       setLogs(loggedDatesStr);
 
       const tempPointDates: number[] = [];
@@ -143,10 +144,10 @@ const Points = () => {
             {daysArray.map((d) => {
               const monthStr = String(currentMonth + 1).padStart(2, '0');
               const dayStr = String(d).padStart(2, '0');
-              const dateStr = `${currentYear}-${monthStr}-${dayStr}`; // ผลลัพธ์: 2025-03-15
+              const dateStr = `${currentYear}-${monthStr}-${dayStr}`;
               
-              const today = new Date();
-              const isToday = d === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+              const todayStr = new Date().toLocaleDateString('en-CA'); // จะได้ "YYYY-MM-DD" ตามเวลาเครื่อง
+              const isToday = dateStr === todayStr;
               const isTracked = logs.includes(dateStr);
               const showStar = pointDates.includes(d);
         
