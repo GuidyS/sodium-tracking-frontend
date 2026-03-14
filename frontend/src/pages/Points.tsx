@@ -28,26 +28,15 @@ const Points = () => {
     
     if (res.data.status === "success" && Array.isArray(res.data.data)) {
       const validLogs = res.data.data.filter((log: any) => log && log.log_date);
+      const sodium = Number(log.total_sodium_daily || 0); // เช็ค total_sodium_daily
       
       // ✅ แก้จุดนี้: เก็บวันที่แบบ String ตรงๆ ไม่ผ่าน Date Object เพื่อกันวันที่เคลื่อน
       const loggedDatesStr = validLogs
-      .filter((log: any) => {
-        // เช็คทั้ง total_sodium_daily (เผื่อ API ส่งมาเป็นชื่อนี้) 
-        // หรือเช็คว่ามี log_date ก็ถือว่ามีการบันทึกแล้ว
-        const sodium = Number(log.total_sodium_daily || 0);
-        return sodium > 0;
-      })
-      .map((log: any) => {
-        // บังคับให้ format เป็น YYYY-MM-DD แน่นอน
-        const d = new Date(log.log_date);
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
-      });
+        .filter((log: any) => Number(log.total_sodium_daily || 0) > 0)
+        .map((log: any) => log.log_date.split(' ')[0])
 
-      console.log("วันที่ที่มีการบันทึก (logs):", loggedDatesStr); // 👈 เพิ่มบรรทัดนี้ดูใน Console (F12)
-      setLogs(loggedDatesStr);
+      const uniqueLoggedDates = Array.from(new Set(loggedDatesStr));
+      setLogs(uniqueLoggedDates);
 
       const tempPointDates: number[] = [];
 
