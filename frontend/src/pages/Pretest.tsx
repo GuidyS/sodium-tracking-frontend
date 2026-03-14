@@ -144,13 +144,24 @@ const Pretest = () => {
   };
 
   const handleSubmit = async () => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    // 🌟 ดึงข้อมูลล่าสุดจาก localStorage ทุกครั้งที่กดส่ง
+    const userData = localStorage.getItem("user");
+    if (!userData) {
+      toast({
+        variant: "destructive",
+        title: "กรุณาเข้าสู่ระบบใหม่",
+        description: "เซสชันของคุณหมดอายุหรือข้อมูลผู้ใช้หายไป",
+      });
+      return;
+    }
+    
+    const user = JSON.parse(userData);
 
     try {
       const res = await api.post("/index.php?page=food-log&action=submit_test", {
         test_type: "pre",
         score: score,
-        user_id: user.user_id
+        user_id: user.user_id // ส่ง ID ไปยืนยัน
       });
 
       if (res.data.status === "success") {
@@ -159,18 +170,20 @@ const Pretest = () => {
           description: res.data.message,
         });
 
-        const updatedUser = { ...user, pretest_done: 1 };
+        // 🌟 อัปเดตข้อมูลในเครื่องทันที
+        const updatedUser = { ...user, pretest_done: 1, updated_at: new Date().toISOString() };
         localStorage.setItem("user", JSON.stringify(updatedUser));
         setSubmitted(true);
       } else {
         toast({
           variant: "destructive",
-          title: "ไม่สามารถบันทึกได้",
+          title: "แจ้งเตือน",
           description: res.data.message,
         });
       }
     } catch (err: any) {
-      const errMsg = err.response?.data?.message || "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์";
+      // จัดการ Error 401 หรือปัญหา Network
+      const errMsg = err.response?.data?.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้";
       toast({
         variant: "destructive",
         title: "เกิดข้อผิดพลาด",
@@ -178,7 +191,7 @@ const Pretest = () => {
       });
     }
   };
-
+  
   const handleFinish = () => {
     navigate("/splash");
   };
