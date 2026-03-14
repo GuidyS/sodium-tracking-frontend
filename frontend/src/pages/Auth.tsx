@@ -491,7 +491,7 @@ const Auth = () => {
                 type="button"
                 onClick={() => {
                   // ให้วิ่งไปที่หน้า PHP ที่คุณทำโลจิก Google ไว้
-                  window.location.href = "http://localhost:8888/index.php?page=google-callback"; 
+                  window.location.href = "https://sodium-tracking-backend-production.up.railway.app/index.php?page=google-callback"; 
                 }}
                 className="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card py-3.5 font-medium text-foreground shadow-sm transition-all hover:bg-secondary"
               >
