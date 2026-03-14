@@ -16,7 +16,10 @@ const DailyTracking = () => {
       try {
         setIsLoading(true);
         // ดึงข้อมูลทั้งหมด (อย่าลืมแก้ไฟล์ food-log.php ให้เอา CURDATE ออกตามที่แนะนำก่อนหน้า)
-        const res = await api.get("/index.php?page=food-log&action=daily");
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+    
+        // ส่ง user_id แนบไปใน URL
+        const res = await api.get(`/index.php?page=food-log&action=daily&user_id=${user.user_id}`);
         if (res.data.status === "success") {
           setAllFoods(res.data.data);
         }
