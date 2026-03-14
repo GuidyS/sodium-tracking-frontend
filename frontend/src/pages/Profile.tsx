@@ -119,6 +119,7 @@ const Profile = () => {
         toast({ title: "เปลี่ยนรหัสผ่านสำเร็จ" });
       }
     } catch (error: any) {
+      console.error("Change password error:", error);
       toast({ title: "เกิดข้อผิดพลาด", description: error.response?.data?.message, variant: "destructive" });
     }
   };
