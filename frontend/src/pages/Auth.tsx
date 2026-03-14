@@ -4,6 +4,7 @@ import { Eye, EyeOff, Droplets, User, Lock, Mail, ChevronDown } from "lucide-rea
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/axios";
+import logo from "@/assets/logo-pharmacy.png";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -197,7 +198,7 @@ const Auth = () => {
             transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
             className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl gradient-btn shadow-lg"
           >
-            <Droplets className="h-8 w-8 text-primary-foreground" />
+            <img src={logo} alt="SSRU Logo" className="h-16 w-auto object-contain" />
           </motion.div>
           <h1 className="font-heading text-3xl font-bold text-foreground">
             Sodium Tracking
