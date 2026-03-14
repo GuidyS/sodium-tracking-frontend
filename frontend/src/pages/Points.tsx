@@ -19,68 +19,63 @@ const Points = () => {
   }, [currentDate]);
 
   const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      setPoints(user.total_points || 0);
+  try {
+    setIsLoading(true);
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    setPoints(user.total_points || 0);
 
-      const res = await api.get("/index.php?page=food-log&action=daily_all");
+    const res = await api.get("/index.php?page=food-log&action=daily_all");
+    
+    if (res.data.status === "success" && Array.isArray(res.data.data)) {
+      const validLogs = res.data.data.filter((log: any) => log && log.log_date);
       
-      if (res.data.status === "success" && Array.isArray(res.data.data)) {
-        // 🌟 1. กรองเฉพาะข้อมูลที่มี log_date และมีค่าโซเดียมจริงๆ เท่านั้น
-        const validLogs = res.data.data.filter((log: any) => log && log.log_date);
-        
-        // เก็บวันที่สำหรับมาร์คสีเขียว
-        const loggedDatesStr = validLogs
-          .filter((log: any) => Number(log.total_sodium_daily) > 0)
-          .map((log: any) => {
-            // ป้องกันกรณีวันที่ส่งมาเป็น DateTime (มีเวลาติดมา) ให้ตัดเอาแค่ YYYY-MM-DD
-            return log.log_date.split(' ')[0]; 
-          });
-        setLogs(loggedDatesStr);
-
-        const tempPointDates: number[] = [];
-
-        // 🌟 2. เช็คดาวจาก Pretest
-        if (Number(user.pretest_done) === 1 && user.updated_at) {
-          const testDate = new Date(user.updated_at.replace(/-/g, "/"));
-          if (testDate.getMonth() === currentMonth && testDate.getFullYear() === currentYear) {
-            tempPointDates.push(testDate.getDate());
-          }
-        }
-
-        // 🌟 3. เช็คดาวจาก Food Log (สะสมครบทุก 3 วัน)
-        const uniqueDaysCumulative = new Set<string>();
-        
-        // 🌟 4. แก้จุดที่พัง: ตรวจสอบค่าก่อนใช้ localeCompare
-        const sortedLogs = [...validLogs].sort((a, b) => {
-          const dateA = a.log_date || "";
-          const dateB = b.log_date || "";
-          return dateA.localeCompare(dateB);
+      // ✅ แก้จุดนี้: เก็บวันที่แบบ String ตรงๆ ไม่ผ่าน Date Object เพื่อกันวันที่เคลื่อน
+      const loggedDatesStr = validLogs
+        .filter((log: any) => Number(log.total_sodium_daily) > 0)
+        .map((log: any) => {
+          // ตัดเอาแค่ YYYY-MM-DD เผื่อกรณี API ส่งเวลาติดมา
+          return log.log_date.split(' ')[0]; 
         });
+      
+      setLogs(loggedDatesStr);
 
-        sortedLogs.forEach((log: any) => {
-          if (log.total_sodium_daily <= 0) return;
-          const dateKey = log.log_date;
-          if (!uniqueDaysCumulative.has(dateKey)) {
-            uniqueDaysCumulative.add(dateKey);
-            if (uniqueDaysCumulative.size % 3 === 0) {
-              const d = new Date(dateKey);
-              if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-                tempPointDates.push(d.getDate());
-              }
+      const tempPointDates: number[] = [];
+
+      // เช็คดาวจาก Pretest
+      if (Number(user.pretest_done) === 1 && user.updated_at) {
+        const testDate = new Date(user.updated_at.replace(/-/g, "/"));
+        if (testDate.getMonth() === currentMonth && testDate.getFullYear() === currentYear) {
+          tempPointDates.push(testDate.getDate());
+        }
+      }
+
+      const uniqueDaysCumulative = new Set<string>();
+      
+      // ✅ แก้จุดนี้: เรียงลำดับวันที่ให้ถูกต้อง
+      const sortedLogs = [...validLogs].sort((a, b) => a.log_date.localeCompare(b.log_date));
+
+      sortedLogs.forEach((log: any) => {
+        if (Number(log.total_sodium_daily) <= 0) return;
+        const dateKey = log.log_date.split(' ')[0];
+        if (!uniqueDaysCumulative.has(dateKey)) {
+          uniqueDaysCumulative.add(dateKey);
+          if (uniqueDaysCumulative.size % 3 === 0) {
+            const d = new Date(dateKey.replace(/-/g, "/"));
+            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+              tempPointDates.push(d.getDate());
             }
           }
-        });
+        }
+      });
 
-        setPointDates(tempPointDates);
-      }
-    } catch (error) {
-      console.error("Fetch error:", error);
-    } finally {
-      setIsLoading(false);
+      setPointDates(tempPointDates);
     }
-  };
+  } catch (error) {
+    console.error("Fetch error:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const numDays = new Date(currentYear, currentMonth + 1, 0).getDate();
   const daysArray = Array.from({ length: numDays }, (_, i) => i + 1);
@@ -146,7 +141,9 @@ const Points = () => {
             {/* 🌟 เพิ่ม gap เล็กน้อยในจอใหญ่เพื่อให้ดูโปร่งขึ้นเมื่อตารางกว้างขึ้น */}
             {blanks.map(i => <div key={`b-${i}`} />)}
             {daysArray.map((d) => {
-              const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+              const monthStr = String(currentMonth + 1).padStart(2, '0');
+              const dayStr = String(d).padStart(2, '0');
+              const dateStr = `${currentYear}-${monthStr}-${dayStr}`; // ผลลัพธ์: 2025-03-15
               
               const today = new Date();
               const isToday = d === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
