@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Star, Gift, Trophy, Check, Flame } from "lucide-react";
+import { ArrowLeft, Star, Gift, Trophy, Flame } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "@/components/PageLayout";
 import StreakCalendar from "@/components/StreakCalendar";
@@ -20,47 +20,60 @@ const Points = () => {
         setLoading(true);
         // 1. ดึงข้อมูล Profile ล่าสุด
         const userRes = await api.get("/index.php?page=profile");
-        // 2. ดึงรายการอาหารทั้งหมดที่เคยบันทึกมาคำนวณดาว
+        // 2. ดึงรายการอาหารทั้งหมด
         const logRes = await api.get("/index.php?page=food-log&action=daily_all");
 
         if (userRes.data.status === "success" && logRes.data.status === "success") {
           const user = userRes.data.data;
           const logs = logRes.data.data || []; 
           
-          setCurrentPoints(Number(user.total_points));
+          setCurrentPoints(Number(user.total_points || 0));
 
           let tempPointDates: number[] = [];
           let tempTrackedDays: Set<number> = new Set();
           
           const now = new Date();
-          const currentMonth = now.getMonth(); // เดือนปัจจุบัน (0-11)
+          const currentMonth = now.getMonth(); 
           const currentYear = now.getFullYear();
 
-          // --- 🌟 ลอจิกที่ 1: ดาวจากแบบทดสอบ (Real-time ตามวันที่อัปเดต) ---
-          // ถ้า Pretest เสร็จแล้ว ให้ดึงวันที่จาก updated_at ของ User มาแสดงดาว
-          if (Number(user.pretest_done) === 1) {
-            const testDate = new Date(user.updated_at.replace(/-/g, "/"));
-            if (testDate.getMonth() === currentMonth && testDate.getFullYear() === currentYear) {
-              tempPointDates.push(testDate.getDate());
-              tempTrackedDays.add(testDate.getDate());
+          // --- 🌟 ลอจิกที่ 1: ดาวจากแบบทดสอบ (Safety Check) ---
+          if (Number(user.pretest_done) === 1 && user.updated_at) {
+            const testDateStr = user.updated_at.toString().replace(/-/g, "/");
+            const testDate = new Date(testDateStr);
+            
+            if (!isNaN(testDate.getTime())) {
+              if (testDate.getMonth() === currentMonth && testDate.getFullYear() === currentYear) {
+                tempPointDates.push(testDate.getDate());
+                tempTrackedDays.add(testDate.getDate());
+              }
             }
           }
 
-          // --- 🌟 ลอจิกที่ 2: ดาวจากการบันทึกอาหาร (Real-time ตามวันที่บันทึกจริง) ---
-          const sortedLogs = logs.sort((a: any, b: any) => 
-            new Date(a.created_at.replace(/-/g, "/")).getTime() - new Date(b.created_at.replace(/-/g, "/")).getTime()
-          );
+          // --- 🌟 ลอจิกที่ 2: ดาวจากการบันทึกอาหาร (Safety Check) ---
+          const sortedLogs = logs
+            .filter((l: any) => l.created_at) // กรองเฉพาะรายการที่มีวันที่
+            .sort((a: any, b: any) => {
+              const dateA = new Date(a.created_at.replace(/-/g, "/")).getTime();
+              const dateB = new Date(b.created_at.replace(/-/g, "/")).getTime();
+              return dateA - dateB;
+            });
 
           sortedLogs.forEach((log: any, index: number) => {
-            // แยกวันที่ด้วยการ split เพื่อเลี่ยงปัญหา Timezone
+            if (!log.created_at) return;
+
             const fullDateStr = log.created_at.split(' ')[0];
-            const [y, m, d] = fullDateStr.split('-').map(Number);
+            if (!fullDateStr) return;
+
+            const dateParts = fullDateStr.split('-');
+            if (dateParts.length !== 3) return;
+
+            const [y, m, d] = dateParts.map(Number);
             
-            // เช็คว่าข้อมูลอยู่ในเดือนและปีปัจจุบันที่กำลังแสดงหรือไม่
+            // เช็คเดือนและปีปัจจุบัน (m ใน DB มักเป็น 1-12)
             if (m === (currentMonth + 1) && y === currentYear) {
               tempTrackedDays.add(d);
 
-              // ลอจิก: ทุกๆ 3 รายการ ได้ดาว 1 ดวงในวันนั้นๆ
+              // ลอจิก: ทุกๆ 3 รายการ ได้ดาว 1 ดวง
               if ((index + 1) % 3 === 0) {
                 tempPointDates.push(d);
               }
@@ -95,9 +108,7 @@ const Points = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="font-heading text-2xl font-bold text-foreground">
-            คะแนนสะสม
-          </h1>
+          <h1 className="font-heading text-2xl font-bold">คะแนนสะสม</h1>
         </div>
 
         {/* Points Display Card */}
@@ -134,7 +145,7 @@ const Points = () => {
               <Flame className="h-5 w-5 text-orange-500 fill-orange-500" />
               ตารางสะสมแต้ม
             </h2>
-            <div className="text-xs font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full uppercase">
+            <div className="text-[10px] font-bold text-muted-foreground bg-muted px-3 py-1 rounded-full uppercase">
               {new Intl.DateTimeFormat('th-TH', { month: 'long', year: 'numeric' }).format(new Date())}
             </div>
           </div>
@@ -147,13 +158,13 @@ const Points = () => {
             <StreakCalendar 
               trackedDays={trackedDays} 
               pointDates={pointDates} 
-              currentMonth={new Date()} // 🌟 เลื่อนเดือนตามเวลาปัจจุบันจริง
+              currentMonth={new Date()} 
             />
           )}
           
           <div className="mt-4 flex items-center gap-4 text-[10px] text-muted-foreground border-t pt-4 border-border/50">
             <div className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-full bg-primary/30" /> มีการบันทึก
+              <div className="h-3 w-3 rounded-full bg-emerald-500/30" /> มีการบันทึก
             </div>
             <div className="flex items-center gap-1.5">
               <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" /> ได้รับดาว (แต้ม)
@@ -165,16 +176,14 @@ const Points = () => {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Gift className="h-6 w-6 text-primary" />
-            <h2 className="font-heading text-2xl font-bold text-foreground text-center">
-              เงื่อนไขการรับรางวัล
-            </h2>
+            <h2 className="font-heading text-xl font-bold">เงื่อนไขการรับรางวัล</h2>
           </div>
           
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="glass-card rounded-3xl overflow-hidden shadow-2xl border border-primary/10"
+            className="rounded-3xl overflow-hidden shadow-lg border border-border"
           >
             <img
               src={infographicRewards}
