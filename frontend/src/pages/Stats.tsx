@@ -5,29 +5,34 @@ import PageLayout from "@/components/PageLayout";
 import api from "@/lib/axios";
 
 const Stats = () => {
-
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
-      const res = await api.get("/index.php?page=food-log&action=stats");
-      if (res.data.status === "success") {
-        // ✅ เพิ่ม .map เพื่อใส่สี (color) เข้าไปในแต่ละตัวแปร entry
-        const dataWithColors = res.data.data.map((item: any, index: number) => ({
-          ...item,
-          sodium: Number(item.sodium),
-          // กำหนดสีตรงนี้ เช่น สลับสีตามลำดับ หรือใช้สีเดียวทั้งหมด
-          color: index % 2 === 0 ? "hsl(25 90% 50%)" : "hsl(155 55% 40%)" 
-        }));
-        setMonthlyData(dataWithColors);
+      try {
+        const res = await api.get("/index.php?page=food-log&action=stats");
+        if (res.data.status === "success") {
+          const dataWithColors = res.data.data.map((item: any, index: number) => ({
+            ...item,
+            sodium: Number(item.sodium),
+            color: index % 2 === 0 ? "hsl(25 90% 50%)" : "hsl(155 55% 40%)" 
+          }));
+          setMonthlyData(dataWithColors);
+        }
+      } catch (e) {
+        console.error("Fetch stats failed", e);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchStats();
   }, []);
 
-  const avgDaily = monthlyData.length > 0 
-    ? Math.round(monthlyData.reduce((s, d) => s + (Number(d.sodium) || 0), 0) / (monthlyData.length * 30))
-    : 0; // ✅ ป้องกัน NaN ถ้าไม่มีข้อมูล
+  // 🌟 คำนวณค่าเฉลี่ยจากข้อมูลที่มีการบันทึกจริง
+  const totalSodium = monthlyData.reduce((s, d) => s + (Number(d.sodium) || 0), 0);
+  const avgDaily = monthlyData.length > 0 ? Math.round(totalSodium / 30) : 0; 
+  // หมายเหตุ: ถ้าต้องการเฉลี่ยตามจำนวนวันที่บันทึกจริง ให้ใช้ค่าอื่นหารแทน 30
 
   return (
     <PageLayout>
@@ -36,39 +41,52 @@ const Stats = () => {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-6"
       >
-        {/* Summary cards */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="glass-card rounded-2xl p-5 shadow-md text-center">
-            <p className="font-heading text-base font-semibold text-foreground">เฉลี่ยต่อวัน</p>
-            <p className="font-heading text-xl font-bold mt-1" style={{ color: "hsl(25 90% 50%)" }}>{avgDaily.toLocaleString()} mg</p>
+          <div className="glass-card rounded-2xl p-5 shadow-md text-center border border-primary/10">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">เฉลี่ยต่อวัน</p>
+            <p className="font-heading text-xl font-black mt-1 text-primary">{avgDaily.toLocaleString()} mg</p>
           </div>
-          <div className="glass-card rounded-2xl p-5 shadow-md text-center">
-            <p className="font-heading text-base font-semibold text-foreground">เป้าหมาย</p>
-            <p className="font-heading text-xl font-bold mt-1" style={{ color: "hsl(155 55% 40%)" }}>2,000 mg</p>
+          <div className="glass-card rounded-2xl p-5 shadow-md text-center border border-emerald-100">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">เป้าหมาย</p>
+            <p className="font-heading text-xl font-black mt-1 text-emerald-600">2,000 mg</p>
           </div>
         </div>
 
-        {/* Chart */}
-        <div className="glass-card rounded-2xl p-5 shadow-lg">
-          <h2 className="font-heading text-lg font-semibold text-foreground">ปริมาณโซเดียม</h2>
-          <p className="mb-4 text-xs text-muted-foreground">รายเดือน(mg)</p>
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                <YAxis hide />
-                <Tooltip
-                  contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}
-                  formatter={(value: number) => [`${value.toLocaleString()} mg`, "โซเดียม"]}
-                />
-                <Bar dataKey="sodium" radius={[4, 4, 0, 0]}>
-                  {monthlyData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill="hsl(25 90% 50%)" />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+        <div className="glass-card rounded-3xl p-6 shadow-xl border border-white/20">
+          <div className="mb-6">
+            <h2 className="font-heading text-lg font-bold text-foreground">แนวโน้มโซเดียม</h2>
+            <p className="text-xs text-muted-foreground">สรุปปริมาณที่ได้รับรายเดือน (mg)</p>
+          </div>
+          
+          <div className="h-64 w-full">
+            {monthlyData.length > 0 && monthlyData[0].sodium > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
+                  <XAxis 
+                    dataKey="month" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 12, fontWeight: 'bold' }} 
+                  />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                    contentStyle={{ borderRadius: "15px", border: "none", boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
+                    formatter={(value: number) => [`${value.toLocaleString()} mg`, "โซเดียมรวม"]}
+                  />
+                  <Bar dataKey="sodium" radius={[10, 10, 0, 0]} barSize={40}>
+                    {monthlyData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground italic text-sm">
+                ยังไม่มีข้อมูลสถิติสำหรับเดือนนี้
+              </div>
+            )}
           </div>
         </div>
       </motion.div>
