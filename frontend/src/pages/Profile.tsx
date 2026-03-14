@@ -122,11 +122,6 @@ const Profile = () => {
   };
 
   const genderOptions = ["ชาย", "หญิง", "ไม่ระบุเพศ"];
-  const roleOptions = [
-    { value: "บุคคลทั่วไป", label: "บุคคลทั่วไป" },
-    { value: "อาจารย์", label: "อาจารย์" },
-    { value: "นักศึกษา", label: "นักศึกษา" },
-  ];
 
   const fields = [
     { key: "full_name" as const, label: "ชื่อ-นามสกุล", icon: User, type: "text" },
