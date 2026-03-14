@@ -24,23 +24,24 @@ const Points = () => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     setPoints(user.total_points || 0);
 
+    // ส่ง user_id ไปกับ API เพื่อให้รองรับการใช้งานในมือถือ
     const res = await api.get(`/index.php?page=food-log&action=daily_all&user_id=${user.user_id}`);
     
     if (res.data.status === "success" && Array.isArray(res.data.data)) {
-      const validLogs = res.data.data.filter((log: any) => log && log.log_date);
-      const sodium = Number(log.total_sodium_daily || 0); // เช็ค total_sodium_daily
+      // 1. กรองเฉพาะข้อมูลที่สมบูรณ์จาก API
+      const validLogs = res.data.data.filter((item: any) => item && item.log_date);
       
-      // ✅ แก้จุดนี้: เก็บวันที่แบบ String ตรงๆ ไม่ผ่าน Date Object เพื่อกันวันที่เคลื่อน
+      // 2. ดึงวันที่ที่มีการบันทึกอาหารจริง (สำหรับมาร์คสีเขียวในปฏิทิน)
       const loggedDatesStr = validLogs
-        .filter((log: any) => Number(log.total_sodium_daily || 0) > 0)
-        .map((log: any) => log.log_date.split(' ')[0])
+        .filter((item: any) => Number(item.total_sodium_daily || 0) > 0)
+        .map((item: any) => item.log_date.split(' ')[0]);
 
-      const uniqueLoggedDates = Array.from(new Set(loggedDatesStr));
-      setLogs(uniqueLoggedDates);
+      // ใช้ Set เพื่อกำจัดวันที่ซ้ำกัน
+      setLogs(Array.from(new Set(loggedDatesStr)));
 
       const tempPointDates: number[] = [];
 
-      // เช็คดาวจาก Pretest
+      // 3. ตรวจสอบดาวจาก Pretest
       if (Number(user.pretest_done) === 1 && user.updated_at) {
         const testDate = new Date(user.updated_at.replace(/-/g, "/"));
         if (testDate.getMonth() === currentMonth && testDate.getFullYear() === currentYear) {
@@ -48,16 +49,19 @@ const Points = () => {
         }
       }
 
+      // 4. คำนวณดาวสะสมจากการบันทึกอาหาร (ทุกๆ 3 วันที่ไม่ซ้ำกัน)
       const uniqueDaysCumulative = new Set<string>();
-      
-      // ✅ แก้จุดนี้: เรียงลำดับวันที่ให้ถูกต้อง
       const sortedLogs = [...validLogs].sort((a, b) => a.log_date.localeCompare(b.log_date));
 
-      sortedLogs.forEach((log: any) => {
-        if (Number(log.total_sodium_daily) <= 0) return;
-        const dateKey = log.log_date.split(' ')[0];
+      sortedLogs.forEach((item: any) => {
+        const sodiumValue = Number(item.total_sodium_daily || 0);
+        if (sodiumValue <= 0) return;
+
+        const dateKey = item.log_date.split(' ')[0];
         if (!uniqueDaysCumulative.has(dateKey)) {
           uniqueDaysCumulative.add(dateKey);
+          
+          // ถ้าสะสมครบทุก 3 วันที่ไม่ซ้ำกัน ให้โชว์ดาว
           if (uniqueDaysCumulative.size % 3 === 0) {
             const d = new Date(dateKey.replace(/-/g, "/"));
             if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
@@ -70,7 +74,7 @@ const Points = () => {
       setPointDates(tempPointDates);
     }
   } catch (error) {
-    console.error("Fetch error:", error);
+    console.error("Failed to fetch points data:", error);
   } finally {
     setIsLoading(false);
   }
