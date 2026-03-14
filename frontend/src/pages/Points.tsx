@@ -117,7 +117,7 @@ const Points = () => {
         </div>
 
         {/* ปฏิทินสะสมแต้ม */}
-        <div className="glass-card rounded-3xl p-6 shadow-xl border border-white/20 bg-white/50">
+        <div className="glass-card rounded-3xl p-6 shadow-xl border border-white/20 bg-white/50 max-w-md mx-auto md:max-w-lg">
           <div className="flex items-center justify-between mb-8">
             <h2 className="font-heading text-base font-bold flex items-center gap-2">
               <Star className="text-orange-500 fill-orange-500" size={18} /> ตารางสะสมแต้ม
@@ -153,7 +153,7 @@ const Points = () => {
               const showStar = pointDates.includes(d);
             
               return (
-                <div key={d} className="relative aspect-square p-1">
+                <div key={d} className="relative aspect-square p-0.5">
                   <div className={`w-full h-full rounded-xl flex items-center justify-center transition-all duration-300 ${
                     isToday 
                       ? "ring-2 ring-primary ring-offset-2 shadow-lg scale-105 z-10" // วันปัจจุบัน: มีขอบเน้นและขยายเล็กน้อย
@@ -186,13 +186,13 @@ const Points = () => {
           </div>
           
           {/* คำอธิบายสัญลักษณ์ */}
-          <div className="mt-6 pt-4 border-t border-border/50 grid grid-cols-2 gap-2 text-[10px] text-muted-foreground font-medium">
+        <div className="mt-8 pt-4 border-t border-border/50 flex justify-between items-center text-[10px] text-muted-foreground font-medium">
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded bg-emerald-500" />
+              <div className="w-2.5 h-2.5 rounded bg-emerald-500" />
               <span>มีการบันทึกอาหาร</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded bg-white border border-gray-200 flex items-center justify-center">
+              <div className="w-2.5 h-2.5 rounded bg-white border border-gray-200 flex items-center justify-center">
                 <Star size={8} className="text-yellow-400 fill-yellow-400" />
               </div>
               <span>ได้รับแต้ม (3 วัน/แบบทดสอบ)</span>
