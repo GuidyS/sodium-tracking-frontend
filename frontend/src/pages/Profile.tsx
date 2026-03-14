@@ -110,7 +110,7 @@ const Profile = () => {
       return;
     }
     try {
-      const response = await api.post("/index.php?page=reset-password", {
+      const response = await api.post("/index.php?page=change-password", {
         current_password: currentPassword,
         new_password: newPassword
       });
