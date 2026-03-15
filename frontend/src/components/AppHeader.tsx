@@ -9,7 +9,7 @@ const AppHeader = () => {
       style={{ background: "linear-gradient(135deg, hsl(155 45% 45%), hsl(140 40% 55%))" }}
     >
       <h1 className="text-xl font-extrabold tracking-wide text-white drop-shadow-sm font-body italic">
-        Sodium <span className="opacity-90">Tracking</span>
+        Desalt <span className="opacity-90">DeNa</span>
       </h1>
       <div className="flex items-center gap-5">
         <button onClick={() => navigate("/settings")} className="text-white/80 hover:text-white transition-colors">
