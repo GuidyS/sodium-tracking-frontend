@@ -201,7 +201,7 @@ const Auth = () => {
             <img src={logo} alt="SSRU Logo" className="h-16 w-auto object-contain" />
           </motion.div>
           <h1 className="font-heading text-3xl font-bold text-foreground">
-            Sodium Tracking
+            Desalt DeNa
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             ติดตามปริมาณโซเดียมของคุณอย่างง่ายดาย
@@ -509,7 +509,7 @@ const Auth = () => {
 
         {/* Footer */}
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Sodium Tracking © 2026
+          Desalt DeNa © 2026
         </p>
       </motion.div>
     </div>
