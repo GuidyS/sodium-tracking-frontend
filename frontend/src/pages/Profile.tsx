@@ -90,19 +90,24 @@ const Profile = () => {
     handleSave(updatedData);
   };
 
-  const handleSave = async (dataToSave: typeof editProfile) => {
-    try {
-      const response = await api.post("/index.php?page=edit-profile", dataToSave);
-      if (response.data.status === "success") {
-        setProfile(dataToSave);
-        setIsEditing(false);
-        toast({ title: "บันทึกสำเร็จ", description: "ข้อมูลของคุณได้รับการอัปเดตแล้ว" });
-      }
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.message || "ไม่สามารถบันทึกข้อมูลได้";
-      toast({ title: "เกิดข้อผิดพลาด", description: errorMsg, variant: "destructive" });
+ const handleSave = async (dataToSave: typeof editProfile) => {
+  try {
+    // 🌟 ดึง User จาก LocalStorage มาเพื่อเอา ID
+    const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+    
+    // 🌟 แนบ user_id เข้าไปใน Object ที่จะส่งไป Save
+    const dataWithId = { ...dataToSave, user_id: savedUser.user_id };
+
+    const response = await api.post("/index.php?page=edit-profile", dataWithId);
+    if (response.data.status === "success") {
+      setProfile(dataToSave);
+      setIsEditing(false);
+      toast({ title: "บันทึกสำเร็จ", description: "ข้อมูลของคุณได้รับการอัปเดตแล้ว" });
     }
-  };
+  } catch (error: any) {
+    // ...
+  }
+};
 
   const handleChangePassword = async () => {
   // 1. ตรวจสอบว่ากรอกข้อมูลหรือยัง
