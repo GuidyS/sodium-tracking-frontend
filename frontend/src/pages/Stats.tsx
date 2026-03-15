@@ -11,7 +11,19 @@ const Stats = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await api.get("/index.php?page=food-log&action=stats");
+        setIsLoading(true);
+        // 🌟 ดึง ID จาก LocalStorage เพื่อยืนยันตัวตนบนมือถือ
+        const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+        const userId = savedUser.user_id;
+
+        if (!userId) {
+          setIsLoading(false);
+          return;
+        }
+
+        // 🌟 ส่ง user_id แนบไปเพื่อให้ Backend ดึงข้อมูลสถิติของ User คนนี้มาให้ถูกคน
+        const res = await api.get(`/index.php?page=food-log&action=stats&user_id=${userId}`);
+        
         if (res.data.status === "success") {
           const dataWithColors = res.data.data.map((item: any, index: number) => ({
             ...item,
@@ -32,7 +44,7 @@ const Stats = () => {
   // 🌟 คำนวณยอดรวมทั้งหมด (Total All-time)
   const totalAllTime = monthlyData.reduce((s, d) => s + (Number(d.sodium) || 0), 0);
   
-  // 🌟 คำนวณค่าเฉลี่ยต่อวัน (คำนวณจากยอดรวมหาร 30 เพื่อดูค่าเฉลี่ยรายเดือน)
+  // 🌟 คำนวณค่าเฉลี่ยต่อวัน (คำนวณจากยอดรวมหาร 30 วันของเดือน)
   const avgDaily = monthlyData.length > 0 ? Math.round(totalAllTime / 30) : 0; 
 
   return (
@@ -48,28 +60,30 @@ const Stats = () => {
           <p className="text-sm text-muted-foreground">สรุปพฤติกรรมการบริโภคโซเดียมสะสม</p>
         </div>
 
-        {/* Big Total Card - แสดงยอดรวมสะสมทั้งหมด */}
+        {/* Big Total Card */}
         <motion.div 
-          whileHover={{ scale: 1.02 }}
+          whileHover={{ scale: 1.01 }}
           className="glass-card rounded-3xl p-8 text-center shadow-2xl border-2 border-primary/20 bg-gradient-to-b from-white to-primary/5"
         >
           <p className="text-xs font-bold text-primary uppercase tracking-[0.2em] mb-2">โซเดียมสะสมทั้งหมด</p>
           <div className="flex items-baseline justify-center gap-2">
             <span className="font-heading text-6xl font-black text-foreground">
-              {totalAllTime.toLocaleString()}
+              {isLoading ? "..." : totalAllTime.toLocaleString()}
             </span>
             <span className="text-xl font-bold text-muted-foreground">mg</span>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-4 italic">เริ่มบันทึกข้อมูลตั้งแต่วันที่ 14 มีนาคม 2569</p>
+          <p className="text-[10px] text-muted-foreground mt-4 italic">ข้อมูลอัปเดตล่าสุดตามการบันทึกของคุณ</p>
         </motion.div>
 
         {/* Summary Mini Cards */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="glass-card rounded-2xl p-5 shadow-md text-center bg-white">
+          <div className="glass-card rounded-2xl p-5 shadow-md text-center bg-white border border-border/50">
             <p className="text-[10px] font-bold text-muted-foreground uppercase">เฉลี่ยต่อวัน (เดือนนี้)</p>
-            <p className="font-heading text-xl font-black mt-1 text-orange-500">{avgDaily.toLocaleString()} mg</p>
+            <p className="font-heading text-xl font-black mt-1 text-orange-500">
+              {isLoading ? "..." : avgDaily.toLocaleString()} mg
+            </p>
           </div>
-          <div className="glass-card rounded-2xl p-5 shadow-md text-center bg-white">
+          <div className="glass-card rounded-2xl p-5 shadow-md text-center bg-white border border-border/50">
             <p className="text-[10px] font-bold text-muted-foreground uppercase">เป้าหมายมาตรฐาน</p>
             <p className="font-heading text-xl font-black mt-1 text-emerald-600">2,000 mg</p>
           </div>
@@ -86,7 +100,7 @@ const Stats = () => {
           </div>
           
           <div className="h-64 w-full">
-            {!isLoading && monthlyData.length > 0 && monthlyData[0].sodium > 0 ? (
+            {!isLoading && monthlyData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
@@ -111,7 +125,7 @@ const Stats = () => {
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-2">
-                <p className="italic text-sm">ยังไม่มีสถิติสำหรับแสดงกราฟ</p>
+                <p className="italic text-sm">{isLoading ? "กำลังโหลดข้อมูล..." : "ยังไม่มีข้อมูลสถิติ"}</p>
               </div>
             )}
           </div>
