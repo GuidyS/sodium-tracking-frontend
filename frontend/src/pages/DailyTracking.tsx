@@ -70,11 +70,24 @@ const DailyTracking = () => {
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.currentTarget;
-    target.src = "/foods/default-food.png";
-  };
-
-  const idToWord: Record<number, string> = { 
-    0: "zero" , 1: "one", 2: "two", 3: "three", 4: "four", 5: "five" , 6: "six" , 7: "seven" , 8: "eight" , 9: "nine" , 10: "ten" , 11: "eleven" , 12: "twelve" , 13: "thirteen" , 14: "fourteen" , 15: "fifteen" , 16: "sixteen" , 17: "seventeen" , 18: "eighteen"
+    const currentSrc = target.src;
+  
+    // ใช้ Regex /\.นามสกุล$/i เพื่อเช็คโดยไม่สนตัวพิมพ์เล็ก/ใหญ่ (Case-insensitive)
+    if (/\.png$/i.test(currentSrc)) {
+      target.src = currentSrc.replace(/\.png$/i, '.jpg');
+    } else if (/\.jpg$/i.test(currentSrc)) {
+      target.src = currentSrc.replace(/\.jpg$/i, '.jpeg');
+    } else if (/\.jpeg$/i.test(currentSrc)) {
+      target.src = currentSrc.replace(/\.jpeg$/i, '.webp');
+    } else if (/\.webp$/i.test(currentSrc)) {
+      target.src = currentSrc.replace(/\.webp$/i, '.heic');
+    } else if (/\.heic$/i.test(currentSrc)) {
+      target.src = currentSrc.replace(/\.heic$/i, '.avif');
+    } else {
+      // ถ้าลองทุกนามสกุล (รวมถึง .AVIF / .avif แล้ว) ยังไม่เจอ ให้ใช้รูป Default
+      // เนื่องด้วยไฟล์บางประเภท เช่น .HEIC ไม่รองรับในทุกเบราว์เซอร์ การใช้รูปสำรองจึงสำคัญมากครับ
+      target.src = "/foods/default-food.png";
+    }
   };
 
   return (
