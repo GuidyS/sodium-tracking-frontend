@@ -219,8 +219,6 @@ const Profile = () => {
           </div>
         </div>
 
-        const isGoogleUser = savedUser.is_google === true; // ตรวจสอบสถานะ
-
         <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-4 text-destructive font-bold text-sm bg-destructive/10 rounded-3xl border border-destructive/20">
           <LogOut size={18} /> ออกจากระบบ
         </button>
