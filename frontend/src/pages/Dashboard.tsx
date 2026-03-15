@@ -108,7 +108,7 @@ const Dashboard = () => {
                   tickLine={false} 
                   tick={{ fontSize: 12, fontWeight: 'bold', fill: 'hsl(var(--muted-foreground))' }} 
                 />
-                <YAxis domain={[0, 'auto']} />
+                <YAxis hide domain={[0, 'auto']} />
                 {/* ✅ 2. ปรับแต่ง Tooltip ให้แสดงทั้ง วันที่ และ วันในสัปดาห์ */}
                 <Tooltip
                   cursor={{ fill: 'rgba(0,0,0,0.05)' }}
