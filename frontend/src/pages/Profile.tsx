@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, UserCircle, Edit3, Save, LogOut, User, Lock, Eye, EyeOff, Users } from "lucide-react";
+import { ArrowLeft, UserCircle, Edit3, Save, LogOut, User, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "@/components/PageLayout";
 import { useToast } from "@/hooks/use-toast";
@@ -11,11 +11,6 @@ const Profile = () => {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
 
   const [profile, setProfile] = useState({
     full_name: "",
@@ -28,9 +23,6 @@ const Profile = () => {
   });
 
   const [editProfile, setEditProfile] = useState(profile);
-
-  const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
-  const isGoogleUser = savedUser.is_google === true;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -102,30 +94,6 @@ const Profile = () => {
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || "ไม่สามารถบันทึกข้อมูลได้";
       toast({ title: "เกิดข้อผิดพลาด", description: errorMsg, variant: "destructive" });
-    }
-  };
-
-  const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword) {
-      toast({ title: "กรุณากรอกข้อมูลให้ครบถ้วน", variant: "destructive" });
-      return;
-    }
-
-    try {
-      const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
-      const response = await api.post("/index.php?page=reset-password", {
-        user_id: savedUser.user_id,
-        current_password: currentPassword,
-        new_password: newPassword,
-      });
-
-      if (response.data.status === "success") {
-        toast({ title: "สำเร็จ!", description: "เปลี่ยนรหัสผ่านเรียบร้อยแล้ว" });
-        setCurrentPassword("");
-        setNewPassword("");
-      }
-    } catch (error: any) {
-      toast({ title: "เกิดข้อผิดพลาด", description: error.response?.data?.message || "รหัสผ่านไม่ถูกต้อง", variant: "destructive" });
     }
   };
 
@@ -218,25 +186,6 @@ const Profile = () => {
             </div>
           </div>
         </div>
-
-        {!isGoogleUser && (
-          <div className="glass-card rounded-3xl p-6 shadow-xl border border-white/20">
-            <h2 className="font-heading text-base font-bold mb-4 flex items-center gap-2">
-              <Lock className="h-4 w-4 text-primary" /> แก้ไขรหัสผ่าน
-            </h2>
-            <div className="space-y-3">
-              <div className="relative">
-                <input type={showCurrent ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="รหัสผ่านปัจจุบัน" className="w-full bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm pr-12" />
-                <button onClick={() => setShowCurrent(!showCurrent)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">{showCurrent ? <EyeOff size={16}/> : <Eye size={16}/>}</button>
-              </div>
-              <div className="relative">
-                <input type={showNew ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="รหัสผ่านใหม่" className="w-full bg-secondary/30 border-transparent rounded-2xl px-4 py-3 text-sm pr-12" />
-                <button onClick={() => setShowNew(!showNew)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">{showNew ? <EyeOff size={16}/> : <Eye size={16}/>}</button>
-              </div>
-              <button onClick={handleChangePassword} className="w-full mt-2 bg-primary text-white font-bold py-3 rounded-2xl shadow-lg shadow-primary/20">เปลี่ยนรหัสผ่าน</button>
-            </div>
-          </div>
-        )}
 
         <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-4 text-destructive font-bold text-sm bg-destructive/10 rounded-3xl border border-destructive/20">
           <LogOut size={18} /> ออกจากระบบ
