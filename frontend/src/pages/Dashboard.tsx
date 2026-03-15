@@ -6,7 +6,6 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGri
 import { Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import api from "@/lib/axios";
-import NoData from "@/components/NoData";
 
 const features = [
   { icon: UtensilsCrossed, label: "กรอกข้อมูลอาหาร", path: "/food-log", bg: "bg-[hsl(30,90%,55%)]" },
@@ -15,7 +14,6 @@ const features = [
   { icon: Star, label: "คะแนนสะสม", path: "/points", bg: "bg-[hsl(40,80%,60%)]" },
 ];
 
-// ✅ ตัวแปลงวันที่เป็นชื่อย่อวันไทย
 const dayMapping: Record<number, string> = {
   0: "อา.", 1: "จ.", 2: "อ.", 3: "พ.", 4: "พฤ.", 5: "ศ.", 6: "ส."
 };
@@ -24,29 +22,29 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [chartData, setChartData] = useState<any[]>([]);
 
-  // 1. ดึงข้อมูลและตรวจสอบ
+  // ดึงข้อมูล User
   const userString = localStorage.getItem("user");
   const userData = userString ? JSON.parse(userString) : null;
 
-  // ✅ 2. ดึงข้อมูลรายสัปดาห์จริงจาก API
   useEffect(() => {
-    const userString = localStorage.getItem("user");
-    const userData = userString ? JSON.parse(userString) : null;
-
-    // ✅ ถ้ามี User แต่ยังไม่ทำ Pretest ให้เด้งกลับไปหน้าแบบทดสอบ
     if (userData && userData.pretest_done === 0) {
       navigate("/pretest", { replace: true });
       return;
     }
 
     const fetchWeeklyData = async () => {
+      if (!userData || !userData.user_id) return; // ดัก Error ถ้าไม่มี ID
+
       try {
-        const res = await api.get("/index.php?page=food-log&action=weekly");
+        // 🌟 แก้ไข: ส่ง user_id ไปเพื่อดึงข้อมูลกราฟหน้าแรก
+        const res = await api.get(`/index.php?page=food-log&action=weekly&user_id=${userData.user_id}`);
+        
         if (res.data.status === "success") {
           const formatted = res.data.data.map((item: any) => {
-            const date = new Date(item.log_date);
+            // 🌟 แก้ไข: แปลง - เป็น / เพื่อป้องกันบั๊กวันที่บน iPhone (Safari)
+            const date = new Date(item.log_date.replace(/-/g, "/"));
             return {
-              day: dayMapping[date.getDay()], // แปลงวันที่เป็น จ., อ. ...
+              day: dayMapping[date.getDay()],
               sodium: Number(item.total_sodium_daily)
             };
           });
@@ -56,29 +54,25 @@ const Dashboard = () => {
         console.error("Failed to fetch dashboard data", error);
       }
     };
+    
     fetchWeeklyData();
-  }, [navigate]);
+  }, [navigate, userData?.user_id]); // ใส่ dependency ป้องกัน warning
 
-  // 2. ถ้าไม่มีข้อมูล ให้เด้งกลับไปหน้า Login (ป้องกันหน้าขาว)
   if (!userData) {
     return <Navigate to="/" replace />;
   }
 
   return (
     <PageLayout>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-6"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
         <div className="px-1">
-        <p className="text-xl font-heading font-medium text-muted-foreground">
-          ยินดีต้อนรับ คุณ 
-          <span className="ml-1.5 font-bold text-[hsl(155,45%,45%)]">
-            {userData.full_name}
-          </span> 👋
-        </p>
-      </div>
+          <p className="text-xl font-heading font-medium text-muted-foreground">
+            ยินดีต้อนรับ คุณ 
+            <span className="ml-1.5 font-bold text-[hsl(155,45%,45%)]">
+              {userData.full_name}
+            </span> 👋
+          </p>
+        </div>
 
         {/* Chart Card */}
         <div className="glass-card rounded-2xl p-5 shadow-lg">
@@ -86,7 +80,6 @@ const Dashboard = () => {
           <p className="mb-4 text-xs text-muted-foreground">รายสัปดาห์(mg)</p>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
-              {/* ✅ เปลี่ยนมาใช้ chartData จาก API */}
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                 <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
