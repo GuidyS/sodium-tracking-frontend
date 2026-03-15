@@ -87,7 +87,7 @@ const Settings = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">ชื่อแอป</span>
-              <span className="text-sm font-semibold text-foreground font-body italic">Sodium Tracking</span>
+              <span className="text-sm font-semibold text-foreground font-body italic">Desalt DeNa</span>
             </div>
             <div className="border-t border-border" />
             <div className="flex items-center justify-between">
