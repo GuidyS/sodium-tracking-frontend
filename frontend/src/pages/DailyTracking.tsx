@@ -73,6 +73,10 @@ const DailyTracking = () => {
     target.src = "/foods/default-food.png";
   };
 
+  const idToWord: Record<number, string> = { 
+    0: "zero" , 1: "one", 2: "two", 3: "three", 4: "four", 5: "five" , 6: "six" , 7: "seven" , 8: "eight" , 9: "nine" , 10: "ten" , 11: "eleven" , 12: "twelve" , 13: "thirteen" , 14: "fourteen" , 15: "fifteen" , 16: "sixteen" , 17: "seventeen" , 18: "eighteen"
+  };
+
   return (
     <PageLayout>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col min-h-[70vh] space-y-6 pb-24">
