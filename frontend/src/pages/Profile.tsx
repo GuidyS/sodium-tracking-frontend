@@ -29,6 +29,7 @@ const Profile = () => {
 
   const [editProfile, setEditProfile] = useState(profile);
 
+  const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const isGoogleUser = savedUser.is_google === true; // ตรวจสอบสถานะ
 
   useEffect(() => {
