@@ -18,27 +18,26 @@ const idToWord: Record<number, string> = {
 
 const FoodItem = ({ food, isSelected, onToggle }: { food: any, isSelected: boolean, onToggle: (f: any) => void }) => {
     const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-      const target = e.currentTarget;
-      const currentSrc = target.src;
-      // วนลูปเปลี่ยนนามสกุลไฟล์ไปเรื่อยๆ จนกว่าจะเจอไฟล์ที่มีอยู่จริงในโฟลเดอร์
-      if (currentSrc.endsWith('.png')) {
-        target.src = currentSrc.replace('.png', '.jpg');
-      } else if (currentSrc.endsWith('.jpg')) {
-        target.src = currentSrc.replace('.jpg', '.jpeg');
-      } else if (currentSrc.endsWith('.jpeg')) {
-        target.src = currentSrc.replace('.jpeg', '.webp');
-      } else if (currentSrc.endsWith('.webp')) {
-        target.src = currentSrc.replace('.webp', '.HEIC');
-      } else if (currentSrc.endsWith('.HEIC')) {
-        target.src = currentSrc.replace('.HEIC', '.heic');
-      } else if (currentSrc.endsWith('.heic')) {
-        // ✅ เพิ่มการตรวจสอบไฟล์ .avif ต่อจาก .heic
-        target.src = currentSrc.replace('.heic', '.avif');
-      } else {
-        // ถ้าลองครบทุกนามสกุล (รวมถึง .avif แล้ว) ยังไม่เจอ ให้ใช้รูป Default
-        target.src = "/foods/default-food.png";
-      }
-    };
+    const target = e.currentTarget;
+    const currentSrc = target.src;
+  
+    // ใช้ Regex /\.นามสกุล$/i เพื่อเช็คโดยไม่สนตัวพิมพ์เล็ก/ใหญ่ (Case-insensitive)
+    if (/\.png$/i.test(currentSrc)) {
+      target.src = currentSrc.replace(/\.png$/i, '.jpg');
+    } else if (/\.jpg$/i.test(currentSrc)) {
+      target.src = currentSrc.replace(/\.jpg$/i, '.jpeg');
+    } else if (/\.jpeg$/i.test(currentSrc)) {
+      target.src = currentSrc.replace(/\.jpeg$/i, '.webp');
+    } else if (/\.webp$/i.test(currentSrc)) {
+      target.src = currentSrc.replace(/\.webp$/i, '.heic');
+    } else if (/\.heic$/i.test(currentSrc)) {
+      target.src = currentSrc.replace(/\.heic$/i, '.avif');
+    } else {
+      // ถ้าลองทุกนามสกุล (รวมถึง .AVIF / .avif แล้ว) ยังไม่เจอ ให้ใช้รูป Default
+      // เนื่องด้วยไฟล์บางประเภท เช่น .HEIC ไม่รองรับในทุกเบราว์เซอร์ การใช้รูปสำรองจึงสำคัญมากครับ
+      target.src = "/foods/default-food.png";
+    }
+  };
 
     return (
         <button 
