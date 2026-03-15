@@ -14,14 +14,25 @@ const WeeklyTracking = () => {
     const fetchWeekly = async () => {
       try {
         setIsLoading(true);
-        const res = await api.get("/index.php?page=food-log&action=weekly");
+        // 🌟 ดึง ID จาก LocalStorage เพื่อใช้ยืนยันตัวตนบนมือถือ
+        const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+        const userId = savedUser.user_id;
+
+        if (!userId) {
+          console.warn("User ID not found in localStorage");
+          setIsLoading(false);
+          return;
+        }
+
+        // 🌟 ส่ง user_id แนบไปกับ Query String
+        const res = await api.get(`/index.php?page=food-log&action=weekly&user_id=${userId}`);
+        
         if (res.data.status === "success") {
           const formatted = res.data.data.map((d: any) => {
-            // 🌟 แก้ปัญหาการ Parse วันที่ให้รองรับหลายรูปแบบ
+            // แก้ปัญหาการ Parse วันที่ให้รองรับ Safari/iOS
             const dateObj = new Date(d.log_date.replace(/-/g, "/"));
             return {
               date: d.log_date.split('-')[2],
-              // แปลงเดือนเป็นภาษาไทยตามจริง
               month: dateObj.toLocaleDateString('th-TH', { month: 'short' }),
               sodium: Number(d.total_sodium_daily)
             };
@@ -50,15 +61,22 @@ const WeeklyTracking = () => {
           สถิติโซเดียมรายสัปดาห์
         </h2>
 
-        {/* 🌟 ปรับปรุงจุดนี้: แสดง NoData เฉพาะตอนที่ไม่มีข้อมูลจริงๆ */}
+        {/* แสดง NoData เฉพาะตอนที่โหลดเสร็จแล้วแต่ไม่มีข้อมูลจริงๆ */}
         {!isLoading && weeklyData.length === 0 && (
           <div className="py-10">
             <NoData />
           </div>
         )}
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="py-20 text-center text-muted-foreground animate-pulse italic">
+            กำลังดึงข้อมูลรายสัปดาห์...
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {weeklyData.map((day, i) => {
+          {!isLoading && weeklyData.map((day, i) => {
             const isOver = day.sodium > limit;
             return (
               <motion.div
@@ -93,8 +111,7 @@ const WeeklyTracking = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex items-center justify-between rounded-2xl p-5 shadow-lg shadow-orange-500/20"
+            className="flex items-center justify-between rounded-2xl p-5 shadow-lg"
             style={{ background: "linear-gradient(135deg, #FFB800 0%, #FF8A00 100%)" }}
           >
             <div>
