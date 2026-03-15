@@ -30,7 +30,7 @@ const Profile = () => {
   const [editProfile, setEditProfile] = useState(profile);
 
   const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
-  const isGoogleUser = savedUser.is_google === true; // ตรวจสอบสถานะ
+  const isGoogleUser = savedUser.is_google === true || (profile as any).google_id !== null;
 
   useEffect(() => {
     const fetchProfile = async () => {
