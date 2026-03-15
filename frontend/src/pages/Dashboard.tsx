@@ -33,22 +33,41 @@ const Dashboard = () => {
     }
 
     const fetchWeeklyData = async () => {
-      if (!userData || !userData.user_id) return; // ดัก Error ถ้าไม่มี ID
-
       try {
-        // 🌟 แก้ไข: ส่ง user_id ไปเพื่อดึงข้อมูลกราฟหน้าแรก
-        const res = await api.get(`/index.php?page=food-log&action=weekly&user_id=${userData.user_id}`);
+        // ดึงข้อมูล user_id จาก localStorage เพื่อใช้เรียก API
+        const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+        const res = await api.get(`/index.php?page=food-log&action=weekly&user_id=${savedUser.user_id}`);
         
         if (res.data.status === "success") {
-          const formatted = res.data.data.map((item: any) => {
-            // 🌟 แก้ไข: แปลง - เป็น / เพื่อป้องกันบั๊กวันที่บน iPhone (Safari)
-            const date = new Date(item.log_date.replace(/-/g, "/"));
+          const apiData = res.data.data;
+
+          // 🌟 สร้าง Array พื้นฐาน 7 วันล่าสุด (ย้อนหลังจากวันนี้)
+          const last7Days = [];
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            
+            // Format วันที่ให้เป็น YYYY-MM-DD เพื่อใช้เทียบกับข้อมูลจาก API
+            const dateStr = d.toLocaleDateString('en-CA'); 
+            
+            last7Days.push({
+              fullDate: dateStr, // สำหรับเทียบข้อมูล
+              displayDate: d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }), // เช่น 15 มี.ค.
+              dayName: dayMapping[d.getDay()], // เช่น อา.
+              sodium: 0 // ค่าเริ่มต้นเป็น 0
+            });
+          }
+
+          // 🌟 รวมข้อมูลจาก API เข้ากับ Array 7 วันที่สร้างขึ้น
+          const mergedData = last7Days.map(baseDay => {
+            const match = apiData.find((item: any) => item.log_date === baseDay.fullDate);
             return {
-              day: dayMapping[date.getDay()],
-              sodium: Number(item.total_sodium_daily)
+              ...baseDay,
+              sodium: match ? Number(match.total_sodium_daily) : 0
             };
           });
-          setChartData(formatted);
+
+          setChartData(mergedData);
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
@@ -84,11 +103,26 @@ const Dashboard = () => {
                 <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                 <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
                 <YAxis hide />
+                {/* ✅ 2. ปรับแต่ง Tooltip ให้แสดงทั้ง วันที่ และ วันในสัปดาห์ */}
                 <Tooltip
-                  contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}
-                  formatter={(value: number) => [`${value.toLocaleString()} mg`, "โซเดียม"]}
+                  cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-3 rounded-xl shadow-xl border border-border/50">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{data.displayDate}</p>
+                          <p className="font-heading font-bold text-sm text-foreground">{data.dayName}</p>
+                          <p className="text-primary font-black mt-1 text-lg">
+                            {data.sodium.toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">mg</span>
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
-                <Bar dataKey="sodium" radius={[4, 4, 0, 0]} fill="hsl(30, 90%, 55%)" />
+                <Bar dataKey="sodium" radius={[6, 6, 0, 0]} fill="hsl(30, 90%, 55%)" />
               </BarChart>
             </ResponsiveContainer>
           </div>
