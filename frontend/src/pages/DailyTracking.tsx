@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, Plus, Calendar } from "lucide-react";
+import { AlertTriangle, Plus } from "lucide-react";
 import PageLayout from "@/components/PageLayout";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/axios";
@@ -15,10 +15,9 @@ const DailyTracking = () => {
     const fetchDaily = async () => {
       try {
         setIsLoading(true);
-        // ดึงข้อมูลทั้งหมด (อย่าลืมแก้ไฟล์ food-log.php ให้เอา CURDATE ออกตามที่แนะนำก่อนหน้า)
         const user = JSON.parse(localStorage.getItem("user") || "{}");
-    
-        // ส่ง user_id แนบไปใน URL
+        if (!user.user_id) return;
+
         const res = await api.get(`/index.php?page=food-log&action=daily&user_id=${user.user_id}`);
         if (res.data.status === "success") {
           setAllFoods(res.data.data);
@@ -32,8 +31,10 @@ const DailyTracking = () => {
     fetchDaily();
   }, []);
 
-  // 🌟 คำนวณโซเดียมรวม "เฉพาะของวันนี้เท่านั้น" สำหรับแสดงใน Banner
-  const todayStr = new Date().toISOString().split('T')[0];
+  // 🌟 แก้ไข: ดึงวันที่ปัจจุบันแบบ YYYY-MM-DD โดยอิงเวลา Local (ไทย) ป้องกันปัญหาโซนเวลา
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  
   const todaySodium = allFoods
     .filter(f => f.log_date === todayStr)
     .reduce((sum, f) => sum + Number(f.sodium_mg), 0);
@@ -54,18 +55,16 @@ const DailyTracking = () => {
   };
 
   const getDateLabel = (dateString: string) => {
-    const d = new Date(dateString);
-    const today = new Date();
+    const d = new Date(dateString.replace(/-/g, "/"));
+    const todayDate = new Date();
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
 
-    if (d.toDateString() === today.toDateString()) return "วันนี้";
+    if (d.toDateString() === todayDate.toDateString()) return "วันนี้";
     if (d.toDateString() === yesterday.toDateString()) return "เมื่อวานนี้";
     
     return d.toLocaleDateString('th-TH', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
+      day: 'numeric', month: 'long', year: 'numeric' 
     });
   };
 
@@ -76,12 +75,7 @@ const DailyTracking = () => {
 
   return (
     <PageLayout>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col min-h-[70vh] space-y-6 pb-24" 
-      >
-        {/* Header Section */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col min-h-[70vh] space-y-6 pb-24">
         <div className="flex items-center justify-between shrink-0 px-1">
           <div>
             <h2 className="font-heading text-xl font-black text-foreground">บันทึกอาหาร</h2>
@@ -91,28 +85,22 @@ const DailyTracking = () => {
             onClick={() => navigate("/food-log")} 
             className="flex items-center gap-1.5 rounded-2xl bg-primary px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-primary/20 active:scale-95 transition-transform"
           >
-            <Plus className="h-4 w-4" />
-            เพิ่มมื้ออาหาร
+            <Plus className="h-4 w-4" /> เพิ่มมื้ออาหาร
           </button>
         </div>
 
-        {/* 🌟 Banner สรุปโซเดียม (แสดงเฉพาะยอดของวันนี้) */}
         {todaySodium > 0 && (
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className={`flex items-center justify-between rounded-3xl p-5 shadow-sm border ${
-              isOver ? "bg-red-50 border-red-100" : "bg-emerald-50 border-emerald-100"
-            }`}
+            className={`flex items-center justify-between rounded-3xl p-5 shadow-sm border ${isOver ? "bg-red-50 border-red-100" : "bg-emerald-50 border-emerald-100"}`}
           >
             <div className="flex items-center gap-4">
               <div className={`p-3 rounded-2xl ${isOver ? "bg-red-500" : "bg-emerald-500"} text-white`}>
                 <AlertTriangle size={24} />
               </div>
               <div>
-                <p className={`text-[10px] font-bold uppercase tracking-wider ${isOver ? "text-red-500" : "text-emerald-600"}`}>
-                  โซเดียมรวมวันนี้
-                </p>
+                <p className={`text-[10px] font-bold uppercase tracking-wider ${isOver ? "text-red-500" : "text-emerald-600"}`}>โซเดียมรวมวันนี้</p>
                 <p className={`text-2xl font-black ${isOver ? "text-red-600" : "text-emerald-700"}`}>
                   {todaySodium.toLocaleString()} <span className="text-sm font-bold">mg</span>
                 </p>
@@ -125,15 +113,17 @@ const DailyTracking = () => {
           </motion.div>
         )}
 
-        {/* Content Area */}
-        {allFoods.length === 0 && !isLoading ? (
+        {isLoading ? (
+          <div className="flex-1 flex flex-col items-center justify-center py-20 text-muted-foreground animate-pulse text-sm">
+            กำลังโหลดข้อมูล...
+          </div>
+        ) : allFoods.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center py-20">
             <NoData />
           </div>
         ) : (
           <div className="space-y-8">
             {allFoods.map((food, i) => {
-              // เช็คเพื่อแสดงหัวข้อวันที่
               const showDateHeader = i === 0 || allFoods[i-1].log_date !== food.log_date;
               
               return (
@@ -141,17 +131,12 @@ const DailyTracking = () => {
                   {showDateHeader && (
                     <div className="flex items-center gap-2 sticky top-0 bg-background/80 backdrop-blur-md py-2 z-10">
                       <div className="h-1 w-1 rounded-full bg-primary" />
-                      <h3 className="text-sm font-black text-foreground">
-                         {getDateLabel(food.log_date)}
-                      </h3>
+                      <h3 className="text-sm font-black text-foreground">{getDateLabel(food.log_date)}</h3>
                       <div className="flex-1 h-[1px] bg-border/50" />
                     </div>
                   )}
                   
-                  <motion.div 
-                    whileHover={{ scale: 1.01 }}
-                    className="glass-card flex items-center gap-4 rounded-3xl p-4 shadow-sm border border-white/20 bg-white/40"
-                  >
+                  <motion.div whileHover={{ scale: 1.01 }} className="glass-card flex items-center gap-4 rounded-3xl p-4 shadow-sm border border-white/20 bg-white/40">
                     <div className="h-16 w-16 rounded-2xl overflow-hidden shrink-0 shadow-inner bg-secondary/30">
                       <img 
                         src={`/foods/location_${idToWord[food.location_id]}/restaurant_${idToWord[food.restaurant_id]}/${food.food_image}`} 
@@ -168,19 +153,14 @@ const DailyTracking = () => {
                           food.meal_type === 'breakfast' ? 'bg-orange-100 text-orange-600' : 
                           food.meal_type === 'lunch' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
                         }`}>
-                          {food.meal_type === 'breakfast' ? 'เช้า' : 
-                           food.meal_type === 'lunch' ? 'กลางวัน' : 'เย็น'}
+                          {food.meal_type === 'breakfast' ? 'เช้า' : food.meal_type === 'lunch' ? 'กลางวัน' : 'เย็น'}
                         </span>
-                        <span className="text-[10px] text-muted-foreground font-medium">
-                          {formatTime(food.created_at)}
-                        </span>
+                        <span className="text-[10px] text-muted-foreground font-medium">{formatTime(food.created_at)}</span>
                       </div>
                     </div>
                     
                     <div className="text-right">
-                      <p className="font-heading font-black text-lg text-primary">
-                        {Number(food.sodium_mg).toLocaleString()}
-                      </p>
+                      <p className="font-heading font-black text-lg text-primary">{Number(food.sodium_mg).toLocaleString()}</p>
                       <p className="text-[10px] font-bold text-muted-foreground uppercase">mg</p>
                     </div>
                   </motion.div>
