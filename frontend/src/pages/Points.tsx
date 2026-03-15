@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Trophy, Star, Calendar as CalendarIcon } from "lucide-react";
 import PageLayout from "@/components/PageLayout";
+import infographicRewards from "@/assets/infog-1.jpg";
 import api from "@/lib/axios";
 
 const Points = () => {
@@ -19,66 +20,66 @@ const Points = () => {
   }, [currentDate]);
 
   const fetchData = async () => {
-  try {
-    setIsLoading(true);
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    setPoints(user.total_points || 0);
+    try {
+      setIsLoading(true);
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      setPoints(user.total_points || 0);
 
-    // ส่ง user_id ไปกับ API เพื่อให้รองรับการใช้งานในมือถือ
-    const res = await api.get(`/index.php?page=food-log&action=daily_all&user_id=${user.user_id}`);
-    
-    if (res.data.status === "success" && Array.isArray(res.data.data)) {
-      // 1. กรองเฉพาะข้อมูลที่สมบูรณ์จาก API
-      const validLogs = res.data.data.filter((item: any) => item && item.log_date);
+      // ส่ง user_id ไปกับ API เพื่อให้รองรับการใช้งานในมือถือ
+      const res = await api.get(`/index.php?page=food-log&action=daily_all&user_id=${user.user_id}`);
       
-      // 2. ดึงวันที่ที่มีการบันทึกอาหารจริง (สำหรับมาร์คสีเขียวในปฏิทิน)
-      const loggedDatesStr = validLogs
-        .filter((item: any) => Number(item.total_sodium_daily || 0) > 0)
-        .map((item: any) => item.log_date.split(' ')[0]);
+      if (res.data.status === "success" && Array.isArray(res.data.data)) {
+        // 1. กรองเฉพาะข้อมูลที่สมบูรณ์จาก API
+        const validLogs = res.data.data.filter((item: any) => item && item.log_date);
+        
+        // 2. ดึงวันที่ที่มีการบันทึกอาหารจริง (สำหรับมาร์คสีเขียวในปฏิทิน)
+        const loggedDatesStr = validLogs
+          .filter((item: any) => Number(item.total_sodium_daily || 0) > 0)
+          .map((item: any) => item.log_date.split(' ')[0]);
 
-      // ใช้ Set เพื่อกำจัดวันที่ซ้ำกัน
-      setLogs(Array.from(new Set(loggedDatesStr)));
+        // ใช้ Set เพื่อกำจัดวันที่ซ้ำกัน
+        setLogs(Array.from(new Set(loggedDatesStr)));
 
-      const tempPointDates: number[] = [];
+        const tempPointDates: number[] = [];
 
-      // 3. ตรวจสอบดาวจาก Pretest
-      if (Number(user.pretest_done) === 1 && user.updated_at) {
-        const testDate = new Date(user.updated_at.replace(/-/g, "/"));
-        if (testDate.getMonth() === currentMonth && testDate.getFullYear() === currentYear) {
-          tempPointDates.push(testDate.getDate());
-        }
-      }
-
-      // 4. คำนวณดาวสะสมจากการบันทึกอาหาร (ทุกๆ 3 วันที่ไม่ซ้ำกัน)
-      const uniqueDaysCumulative = new Set<string>();
-      const sortedLogs = [...validLogs].sort((a, b) => a.log_date.localeCompare(b.log_date));
-
-      sortedLogs.forEach((item: any) => {
-        const sodiumValue = Number(item.total_sodium_daily || 0);
-        if (sodiumValue <= 0) return;
-
-        const dateKey = item.log_date.split(' ')[0];
-        if (!uniqueDaysCumulative.has(dateKey)) {
-          uniqueDaysCumulative.add(dateKey);
-          
-          // ถ้าสะสมครบทุก 3 วันที่ไม่ซ้ำกัน ให้โชว์ดาว
-          if (uniqueDaysCumulative.size % 3 === 0) {
-            const d = new Date(dateKey.replace(/-/g, "/"));
-            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-              tempPointDates.push(d.getDate());
-            }
+        // 3. ตรวจสอบดาวจาก Pretest
+        if (Number(user.pretest_done) === 1 && user.updated_at) {
+          const testDate = new Date(user.updated_at.replace(/-/g, "/"));
+          if (testDate.getMonth() === currentMonth && testDate.getFullYear() === currentYear) {
+            tempPointDates.push(testDate.getDate());
           }
         }
-      });
 
-      setPointDates(tempPointDates);
+        // 4. คำนวณดาวสะสมจากการบันทึกอาหาร (ทุกๆ 3 วันที่ไม่ซ้ำกัน)
+        const uniqueDaysCumulative = new Set<string>();
+        const sortedLogs = [...validLogs].sort((a, b) => a.log_date.localeCompare(b.log_date));
+
+        sortedLogs.forEach((item: any) => {
+          const sodiumValue = Number(item.total_sodium_daily || 0);
+          if (sodiumValue <= 0) return;
+
+          const dateKey = item.log_date.split(' ')[0];
+          if (!uniqueDaysCumulative.has(dateKey)) {
+            uniqueDaysCumulative.add(dateKey);
+            
+            // ถ้าสะสมครบทุก 3 วันที่ไม่ซ้ำกัน ให้โชว์ดาว
+            if (uniqueDaysCumulative.size % 3 === 0) {
+              const d = new Date(dateKey.replace(/-/g, "/"));
+              if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+                tempPointDates.push(d.getDate());
+              }
+            }
+          }
+        });
+
+        setPointDates(tempPointDates);
+      }
+    } catch (error) {
+      console.error("Failed to fetch points data:", error);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error("Failed to fetch points data:", error);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const numDays = new Date(currentYear, currentMonth + 1, 0).getDate();
   const daysArray = Array.from({ length: numDays }, (_, i) => i + 1);
@@ -141,14 +142,13 @@ const Points = () => {
         
           {/* ช่องวันที่ในปฏิทิน */}
           <div className="grid grid-cols-7 gap-1.5 md:gap-3"> 
-            {/* 🌟 เพิ่ม gap เล็กน้อยในจอใหญ่เพื่อให้ดูโปร่งขึ้นเมื่อตารางกว้างขึ้น */}
             {blanks.map(i => <div key={`b-${i}`} />)}
             {daysArray.map((d) => {
               const monthStr = String(currentMonth + 1).padStart(2, '0');
               const dayStr = String(d).padStart(2, '0');
               const dateStr = `${currentYear}-${monthStr}-${dayStr}`;
               
-              const todayStr = new Date().toLocaleDateString('en-CA'); // จะได้ "YYYY-MM-DD" ตามเวลาเครื่อง
+              const todayStr = new Date().toLocaleDateString('en-CA'); 
               const isToday = dateStr === todayStr;
               const isTracked = logs.includes(dateStr);
               const showStar = pointDates.includes(d);
@@ -177,7 +177,7 @@ const Points = () => {
             })}
           </div>
           
-          {/* คำอธิบายสัญลักษณ์ (ชิดซ้าย-ขวา) */}
+          {/* คำอธิบายสัญลักษณ์ */}
           <div className="mt-8 pt-6 border-t border-border/50 flex justify-between items-center text-[10px] md:text-xs text-muted-foreground font-medium">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-md bg-emerald-500 shadow-sm" />
@@ -191,6 +191,21 @@ const Points = () => {
             </div>
           </div>
         </div>
+
+        {/* 🌟 อินโฟกราฟิก 🌟 */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+          className="glass-card rounded-3xl overflow-hidden shadow-lg border border-white/20"
+        >
+          <img
+            src={infographicRewards}
+            alt="เงื่อนไขการรับของรางวัล"
+            className="w-full h-auto object-contain"
+          />
+        </motion.div>
+
       </motion.div>
     </PageLayout>
   );
