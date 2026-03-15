@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, UserCircle, Edit3, Save, LogOut, User, Mail, Lock, Eye, EyeOff, ChevronDown, Users } from "lucide-react";
+import { ArrowLeft, UserCircle, Edit3, Save, LogOut, User, Lock, Eye, EyeOff, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "@/components/PageLayout";
 import { useToast } from "@/hooks/use-toast";
@@ -32,22 +32,39 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        // 🌟 ดึง ID จาก LocalStorage เพื่อใช้บนมือถือ
-        const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+        // 🌟 1. ดักจับ Error: เช็คว่าในเครื่องมีข้อมูล user ไหม
+        const savedUserStr = localStorage.getItem("user");
+        if (!savedUserStr) {
+          toast({ title: "เซสชั่นหมดอายุ", description: "กรุณาเข้าสู่ระบบใหม่", variant: "destructive" });
+          navigate("/");
+          return;
+        }
+
+        const savedUser = JSON.parse(savedUserStr);
+        if (!savedUser.user_id) {
+          toast({ title: "ข้อมูลไม่สมบูรณ์", description: "กรุณาเข้าสู่ระบบใหม่อีกครั้ง", variant: "destructive" });
+          navigate("/");
+          return;
+        }
+
+        // 🌟 2. ดึงข้อมูลโปรไฟล์โดยแนบ user_id ไปด้วย
         const response = await api.get(`/index.php?page=edit-profile&user_id=${savedUser.user_id}`);
         
         if (response.data.status === "success") {
           setProfile(response.data.data);
           setEditProfile(response.data.data);
+        } else {
+          toast({ title: "ดึงข้อมูลล้มเหลว", description: response.data.message, variant: "destructive" });
         }
       } catch (error) {
         console.error("Fetch profile failed", error);
+        toast({ title: "การเชื่อมต่อล้มเหลว", description: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้", variant: "destructive" });
       } finally {
         setIsLoading(false);
       }
     };
     fetchProfile();
-  }, []);
+  }, [navigate, toast]);
 
   const validateAndSave = async () => {
     const updatedData = { ...editProfile };
@@ -69,8 +86,8 @@ const Profile = () => {
 
   const handleSave = async (dataToSave: typeof editProfile) => {
     try {
-      // 🌟 ดึง ID มาแนบตอน POST เพื่อแก้ Error สีแดงบนมือถือ
       const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      // 🌟 3. แนบ user_id ไปกับข้อมูลตอนอัปเดต
       const dataWithId = { ...dataToSave, user_id: savedUser.user_id };
 
       const response = await api.post("/index.php?page=edit-profile", dataWithId);
@@ -94,7 +111,7 @@ const Profile = () => {
     try {
       const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
       const response = await api.post("/index.php?page=reset-password", {
-        user_id: savedUser.user_id, // 🌟 แนบ ID ไปด้วย
+        user_id: savedUser.user_id,
         current_password: currentPassword,
         new_password: newPassword,
       });
@@ -116,6 +133,17 @@ const Profile = () => {
   };
 
   const genderOptions = ["ชาย", "หญิง", "ไม่ระบุเพศ"];
+
+  // 🌟 ป้องกันการโชว์เลข 0 ตอนที่กำลังโหลดข้อมูล
+  if (isLoading) {
+    return (
+      <PageLayout>
+        <div className="flex h-[80vh] items-center justify-center">
+          <p className="text-muted-foreground animate-pulse font-bold">กำลังโหลดข้อมูลโปรไฟล์...</p>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout>
