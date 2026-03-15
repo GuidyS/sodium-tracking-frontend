@@ -52,6 +52,7 @@ const Dashboard = () => {
             
             last7Days.push({
               fullDate: dateStr, // สำหรับเทียบข้อมูล
+              dayLabel: dayMapping[d.getDay()],
               displayDate: d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }), // เช่น 15 มี.ค.
               dayName: dayMapping[d.getDay()], // เช่น อา.
               sodium: 0 // ค่าเริ่มต้นเป็น 0
