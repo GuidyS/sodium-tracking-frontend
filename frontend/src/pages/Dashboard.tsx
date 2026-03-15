@@ -101,8 +101,13 @@ const Dashboard = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                <YAxis hide />
+                <XAxis 
+                  dataKey="dayLabel" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 12, fontWeight: 'bold', fill: 'hsl(var(--muted-foreground))' }} 
+                />
+                <YAxis domain={[0, 'auto']} />
                 {/* ✅ 2. ปรับแต่ง Tooltip ให้แสดงทั้ง วันที่ และ วันในสัปดาห์ */}
                 <Tooltip
                   cursor={{ fill: 'rgba(0,0,0,0.05)' }}
