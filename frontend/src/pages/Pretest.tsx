@@ -269,7 +269,7 @@ const Pretest = () => {
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border/50 px-4 py-3">
         <div className="max-w-md mx-auto space-y-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-foreground">แบบทดสอบก่อนเรียน</h2>
+            <h2 className="text-lg font-bold text-foreground">แบบทดสอบ</h2>
             <span className="text-sm text-muted-foreground font-medium">
               {current + 1}/{questions.length}
             </span>
