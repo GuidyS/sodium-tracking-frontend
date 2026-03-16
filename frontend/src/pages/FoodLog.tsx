@@ -174,7 +174,7 @@ const FoodLog = () => {
               onClick={() => setIsShopOpen(!isShopOpen)}
               className="flex w-full items-center justify-between rounded-2xl border bg-card/50 p-4 text-sm font-medium"
             >
-              <div className="flex items-center gap-2"><span>🏪</span> {activeRestaurantId ? currentLocation.restaurants[activeRestaurantId]?.restaurant_name : "เลือกร้านค้า"}</div>
+              <div className="flex items-center gap-2"> {activeRestaurantId ? currentLocation.restaurants[activeRestaurantId]?.restaurant_name : "เลือกร้านค้า"}</div>
               <ChevronDown className={`h-4 w-4 transition-transform ${isShopOpen ? "rotate-180" : ""}`} />
             </button>
             <AnimatePresence>
