@@ -124,7 +124,7 @@ const FoodLog = () => {
       
       if (response.data.status === "success") {
         toast({ title: "บันทึกสำเร็จ", description: "บันทึกข้อมูลอาหารเรียบร้อยแล้ว" });
-        navigate("/dashboard");
+        navigate("/daily");
       }
     } catch (error) {
       toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถบันทึกข้อมูลได้", variant: "destructive" });
