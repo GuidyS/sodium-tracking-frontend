@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { UtensilsCrossed, BookOpen, Pill, Star } from "lucide-react";
+import { UtensilsCrossed, BookOpen, Pill, Star, Trophy, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "@/components/PageLayout";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
@@ -23,8 +23,8 @@ const Dashboard = () => {
   const [chartData, setChartData] = useState<any[]>([]);
 
   const today = new Date();
-  const startDate = new Date('2026-03-18');
-  const endDate = new Date('2026-03-31');
+  const startDate = new Date(2026, 2, 18); // เลข 2 คือเดือนมีนาคม (ม.ค.=0, ก.พ.=1, มี.ค.=2)
+  const endDate = new Date(2026, 2, 31, 23, 59, 59);
   const isPosttestPeriod = today >= startDate && today <= endDate;
 
   // ดึงข้อมูล User
