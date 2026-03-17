@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { UtensilsCrossed, BookOpen, Pill, Star, Trophy, ChevronRight } from "lucide-react";
+import { UtensilsCrossed, BookOpen, Pill, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "@/components/PageLayout";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
@@ -21,11 +21,6 @@ const dayMapping: Record<number, string> = {
 const Dashboard = () => {
   const navigate = useNavigate();
   const [chartData, setChartData] = useState<any[]>([]);
-
-  const today = new Date();
-  const startDate = new Date(2026, 2, 18); // เลข 2 คือเดือนมีนาคม (ม.ค.=0, ก.พ.=1, มี.ค.=2)
-  const endDate = new Date(2026, 2, 31, 23, 59, 59);
-  const isPosttestPeriod = today >= startDate && today <= endDate && userData?.posttest_done === 0;
 
   // ดึงข้อมูล User
   const userString = localStorage.getItem("user");
@@ -98,22 +93,6 @@ const Dashboard = () => {
             </span> 👋
           </p>
         </div>
-
-        {isPosttestPeriod && (
-          <motion.button
-            onClick={() => navigate("/posttest")}
-            className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-4 rounded-3xl shadow-lg mb-6 flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3">
-              <Trophy className="text-yellow-300" />
-              <div className="text-left">
-                <p className="font-bold">แบบทดสอบหลังเรียน (Post-test)</p>
-                <p className="text-[10px] opacity-80">ทำเพื่อรับแต้มสะสมเพิ่ม 1 แต้ม!</p>
-              </div>
-            </div>
-            <ChevronRight size={20} />
-          </motion.button>
-        )}
 
         {/* Chart Card */}
         <div className="glass-card rounded-2xl p-5 shadow-lg">
