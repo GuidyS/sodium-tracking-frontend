@@ -51,6 +51,7 @@ const Index = () => {
         <Route path="/medicine" element={<Medicine />} />
         <Route path="/points" element={<Points />} />
         <Route path="/pretest" element={<Pretest />} />
+        <Route path="/posttest" element={<Posttest />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />
