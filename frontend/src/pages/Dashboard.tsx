@@ -23,7 +23,7 @@ const Dashboard = () => {
   const [chartData, setChartData] = useState<any[]>([]);
 
   const today = new Date();
-  const startDate = new Date('2026-03-20');
+  const startDate = new Date('2026-03-18');
   const endDate = new Date('2026-03-31');
   const isPosttestPeriod = today >= startDate && today <= endDate;
 
