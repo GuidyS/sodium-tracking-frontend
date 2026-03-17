@@ -22,6 +22,11 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [chartData, setChartData] = useState<any[]>([]);
 
+  const today = new Date();
+  const startDate = new Date('2026-03-20');
+  const endDate = new Date('2026-03-31');
+  const isPosttestPeriod = today >= startDate && today <= endDate;
+
   // ดึงข้อมูล User
   const userString = localStorage.getItem("user");
   const userData = userString ? JSON.parse(userString) : null;
@@ -93,6 +98,22 @@ const Dashboard = () => {
             </span> 👋
           </p>
         </div>
+
+        {isPosttestPeriod && (
+          <motion.button
+            onClick={() => navigate("/posttest")}
+            className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-4 rounded-3xl shadow-lg mb-6 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <Trophy className="text-yellow-300" />
+              <div className="text-left">
+                <p className="font-bold">แบบทดสอบหลังเรียน (Post-test)</p>
+                <p className="text-[10px] opacity-80">ทำเพื่อรับแต้มสะสมเพิ่ม 1 แต้ม!</p>
+              </div>
+            </div>
+            <ChevronRight size={20} />
+          </motion.button>
+        )}
 
         {/* Chart Card */}
         <div className="glass-card rounded-2xl p-5 shadow-lg">
