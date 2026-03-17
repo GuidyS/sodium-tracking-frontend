@@ -25,7 +25,7 @@ const Dashboard = () => {
   const today = new Date();
   const startDate = new Date(2026, 2, 18); // เลข 2 คือเดือนมีนาคม (ม.ค.=0, ก.พ.=1, มี.ค.=2)
   const endDate = new Date(2026, 2, 31, 23, 59, 59);
-  const isPosttestPeriod = today >= startDate && today <= endDate;
+  const isPosttestPeriod = today >= startDate && today <= endDate && userData?.posttest_done === 0;
 
   // ดึงข้อมูล User
   const userString = localStorage.getItem("user");
