@@ -101,7 +101,7 @@ const Dashboard = () => {
             <p className="text-xs opacity-90">ทำแบบทดสอบเพื่อรับแต้มสะสมเพิ่ม</p>
           </div>
           <button 
-            onClick={() => navigate("/posttest")}
+            onClick={() => navigate("/postest")}
             className="bg-white text-[hsl(255,60%,65%)] px-4 py-2 rounded-xl text-sm font-bold shadow-sm"
           >
             ไปทำเลย
