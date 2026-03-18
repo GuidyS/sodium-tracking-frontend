@@ -143,71 +143,71 @@ const Posttest = () => {
     }
   };
 
-const handleSubmit = async () => {
-  const userData = localStorage.getItem("user");
-  if (!userData) {
-    toast({ variant: "destructive", title: "กรุณาเข้าสู่ระบบใหม่" });
-    return;
-  }
+  const handleSubmit = async () => {
+    const userData = localStorage.getItem("user");
+    if (!userData) {
+      toast({ variant: "destructive", title: "กรุณาเข้าสู่ระบบใหม่" });
+      return;
+    }
+    
+    const user = JSON.parse(userData); // ดึงตัวแปร user มาใช้งาน
   
-  const user = JSON.parse(userData); // ดึงตัวแปร user มาใช้งาน
-
-  const now = new Date();
-  const startDate = new Date('2026-03-18T00:00:00'); // แก้เป็น 18 เพื่อทดสอบตามที่คุณต้องการ
-  const endDate = new Date('2026-03-31T23:59:59');
-
-  if (now < startDate) {
-    toast({
-      variant: "destructive",
-      title: "ยังไม่เปิดให้ทำแบบทดสอบ",
-      description: "Post-test จะเริ่มเปิดให้ทำในวันที่ 18 มีนาคม 2569",
-    });
-    return;
-  }
-
-  if (now > endDate) {
-    toast({
-      variant: "destructive",
-      title: "หมดเขตทำแบบทดสอบ",
-      description: "แบบทดสอบ Post-test สิ้นสุดลงแล้ว",
-    });
-    return;
-  }
-
-  try {
-    const res = await api.post("/index.php?page=food-log&action=submit_test", {
-      test_type: "post",
-      score: score,
-      user_id: user.user_id 
-    });
-
-    if (res.data.status === "success") {
-      toast({ title: "บันทึกสำเร็จ", description: res.data.message });
-
-      const updatedUser = { 
-        ...user, 
-        posttest_done: 1, 
-        total_points: (user.total_points || 0) + 1, 
-        updated_at: new Date().toISOString() 
-      };
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      setSubmitted(true);
-    } else {
+    const now = new Date();
+    const startDate = new Date('2026-03-18T00:00:00'); // แก้เป็น 18 เพื่อทดสอบตามที่คุณต้องการ
+    const endDate = new Date('2026-03-31T23:59:59');
+  
+    if (now < startDate) {
       toast({
         variant: "destructive",
-        title: "บันทึกคะแนนไม่สำเร็จ",
-        description: res.data.message,
+        title: "ยังไม่เปิดให้ทำแบบทดสอบ",
+        description: "Post-test จะเริ่มเปิดให้ทำในวันที่ 18 มีนาคม 2569",
+      });
+      return;
+    }
+  
+    if (now > endDate) {
+      toast({
+        variant: "destructive",
+        title: "หมดเขตทำแบบทดสอบ",
+        description: "แบบทดสอบ Post-test สิ้นสุดลงแล้ว",
+      });
+      return;
+    }
+  
+    try {
+      const res = await api.post("/index.php?page=food-log&action=submit_test", {
+        test_type: "post",
+        score: score,
+        user_id: user.user_id 
+      });
+  
+      if (res.data.status === "success") {
+        toast({ title: "บันทึกสำเร็จ", description: res.data.message });
+  
+        const updatedUser = { 
+          ...user, 
+          posttest_done: 1, 
+          total_points: (user.total_points || 0) + 1, 
+          updated_at: new Date().toISOString() 
+        };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        setSubmitted(true);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "บันทึกคะแนนไม่สำเร็จ",
+          description: res.data.message,
+        });
+      }
+    } catch (err: any) {
+      const errMsg = err.response?.data?.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้";
+      toast({
+        variant: "destructive",
+        title: "เกิดข้อผิดพลาด",
+        description: errMsg,
       });
     }
-  } catch (err: any) {
-    const errMsg = err.response?.data?.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้";
-    toast({
-      variant: "destructive",
-      title: "เกิดข้อผิดพลาด",
-      description: errMsg,
-    });
-  }
-};
+  };
   
   const handleFinish = () => {
     navigate("/splash");
