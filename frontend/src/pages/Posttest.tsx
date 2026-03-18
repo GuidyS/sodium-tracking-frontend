@@ -146,7 +146,7 @@ const Posttest = () => {
   const handleSubmit = async () => {
 // 🌟 1. เพิ่มเงื่อนไขตรวจสอบช่วงวันที่ (20 - 31 มีนาคม 2569)
   const now = new Date();
-  const startDate = new Date('2026-03-20T00:00:00');
+  const startDate = new Date('2026-03-18T00:00:00');
   const endDate = new Date('2026-03-31T23:59:59');
 
   if (now < startDate) {
