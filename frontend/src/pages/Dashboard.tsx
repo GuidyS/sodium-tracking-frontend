@@ -23,10 +23,18 @@ const Dashboard = () => {
   const [chartData, setChartData] = useState<any[]>([]);
 
   // ดึงข้อมูล User
-  const userString = localStorage.getItem("user");
-  const userData = userString ? JSON.parse(userString) : null;
+  // 1. ใช้ useState เก็บ userData เพื่อให้ React ติดตามการเปลี่ยนแปลงได้
+  const [userData, setUserData] = useState<any>(() => {
+    const saved = localStorage.getItem("user");
+    return saved ? JSON.parse(saved) : null;
+  });
 
   useEffect(() => {
+    
+    if (!userData) {
+      return <Navigate to="/" replace />;
+    }
+    
     if (userData && userData.pretest_done === 0) {
       navigate("/pretest", { replace: true });
       return;
@@ -76,15 +84,17 @@ const Dashboard = () => {
     };
     
     fetchWeeklyData();
-  }, [navigate, userData?.user_id]); // ใส่ dependency ป้องกัน warning
+  }, [navigate, userData?.user_id, userData?.pretest_done]]); // ใส่ dependency ป้องกัน warning
 
-  if (!userData) {
-    return <Navigate to="/" replace />;
-  }
+  const needsPosttest = (() => {
+      if (!userData || userData.posttest_done !== 0) return false;
+      const now = new Date();
+      const start = new Date('2026-03-18T00:00:00');
+      const end = new Date('2026-03-31T23:59:59');
+      return now >= start && now <= end;
+    })();
 
-  const now = new Date();
-  const isPosttestPeriod = now >= new Date('2026-03-18') && now <= new Date('2026-03-31');
-  const needsPosttest = userData?.posttest_done === 0 && isPosttestPeriod;
+  if (!userData) return null;
 
   return (
     <PageLayout>
