@@ -84,7 +84,7 @@ const Dashboard = () => {
     };
     
     fetchWeeklyData();
-  }, [navigate, userData?.user_id, userData?.pretest_done]]); // ใส่ dependency ป้องกัน warning
+  }, [navigate, userData?.user_id, userData?.pretest_done]); // ใส่ dependency ป้องกัน warning
 
   const needsPosttest = (() => {
       if (!userData || userData.posttest_done !== 0) return false;
