@@ -84,6 +84,27 @@ const Dashboard = () => {
 
   return (
     <PageLayout>
+
+      {/* 🌟 แสดง Banner แจ้งเตือนถ้าถึงเวลาทำ Post-test */}
+      {needsPosttest && (
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="bg-[hsl(255,60%,65%)] text-white p-4 rounded-2xl mb-6 shadow-lg flex justify-between items-center"
+        >
+          <div>
+            <p className="font-bold">แบบทดสอบหลังเรียนเปิดแล้ว!</p>
+            <p className="text-xs opacity-90">ทำแบบทดสอบเพื่อรับแต้มสะสมเพิ่ม</p>
+          </div>
+          <button 
+            onClick={() => navigate("/posttest")}
+            className="bg-white text-[hsl(255,60%,65%)] px-4 py-2 rounded-xl text-sm font-bold shadow-sm"
+          >
+            ไปทำเลย
+          </button>
+        </motion.div>
+      )}
+      
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
         <div className="px-1">
           <p className="text-xl font-heading font-medium text-muted-foreground">
