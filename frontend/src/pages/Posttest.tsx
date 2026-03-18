@@ -144,18 +144,28 @@ const Posttest = () => {
   };
 
   const handleSubmit = async () => {
-    // 🌟 ดึงข้อมูลล่าสุดจาก localStorage ทุกครั้งที่กดส่ง
-    const userData = localStorage.getItem("user");
-    if (!userData) {
-      toast({
-        variant: "destructive",
-        title: "กรุณาเข้าสู่ระบบใหม่",
-        description: "เซสชันของคุณหมดอายุหรือข้อมูลผู้ใช้หายไป",
-      });
-      return;
-    }
-    
-    const user = JSON.parse(userData);
+// 🌟 1. เพิ่มเงื่อนไขตรวจสอบช่วงวันที่ (20 - 31 มีนาคม 2569)
+  const now = new Date();
+  const startDate = new Date('2026-03-20T00:00:00');
+  const endDate = new Date('2026-03-31T23:59:59');
+
+  if (now < startDate) {
+    toast({
+      variant: "destructive",
+      title: "ยังไม่เปิดให้ทำแบบทดสอบ",
+      description: "Post-test จะเริ่มเปิดให้ทำในวันที่ 20 มีนาคม 2569",
+    });
+    return;
+  }
+
+  if (now > endDate) {
+    toast({
+      variant: "destructive",
+      title: "หมดเขตทำแบบทดสอบ",
+      description: "แบบทดสอบ Post-test สิ้นสุดลงแล้ว",
+    });
+    return;
+  }
 
     try {
       const res = await api.post("/index.php?page=food-log&action=submit_test", {
@@ -169,15 +179,21 @@ const Posttest = () => {
           title: "บันทึกสำเร็จ",
           description: res.data.message,
         });
-
-        // 🌟 อัปเดตข้อมูลในเครื่องทันที
-        const updatedUser = { ...user, pretest_done: 1, updated_at: new Date().toISOString() };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-        setSubmitted(true);
+        
+      // 🌟 2. อัปเดตข้อมูลในเครื่อง (เปลี่ยนจาก pretest_done เป็น posttest_done)
+      const updatedUser = { 
+        ...user, 
+        posttest_done: 1, // แก้ไขจุดนี้
+        total_points: user.total_points + 1, // เพิ่มแต้มในเครื่องด้วยเพื่อให้ UI อัปเดตทันที
+        updated_at: new Date().toISOString() 
+      };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setSubmitted(true);
+    }
       } else {
         toast({
           variant: "destructive",
-          title: "แจ้งเตือน",
+          title: "บันทึกคะแนนไม่สำหรับ",
           description: res.data.message,
         });
       }
