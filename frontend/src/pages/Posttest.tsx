@@ -143,17 +143,24 @@ const Posttest = () => {
     }
   };
 
-  const handleSubmit = async () => {
-// 🌟 1. เพิ่มเงื่อนไขตรวจสอบช่วงวันที่ (20 - 31 มีนาคม 2569)
+const handleSubmit = async () => {
+  const userData = localStorage.getItem("user");
+  if (!userData) {
+    toast({ variant: "destructive", title: "กรุณาเข้าสู่ระบบใหม่" });
+    return;
+  }
+  
+  const user = JSON.parse(userData); // ดึงตัวแปร user มาใช้งาน
+
   const now = new Date();
-  const startDate = new Date('2026-03-18T00:00:00');
+  const startDate = new Date('2026-03-18T00:00:00'); // แก้เป็น 18 เพื่อทดสอบตามที่คุณต้องการ
   const endDate = new Date('2026-03-31T23:59:59');
 
   if (now < startDate) {
     toast({
       variant: "destructive",
       title: "ยังไม่เปิดให้ทำแบบทดสอบ",
-      description: "Post-test จะเริ่มเปิดให้ทำในวันที่ 20 มีนาคม 2569",
+      description: "Post-test จะเริ่มเปิดให้ทำในวันที่ 18 มีนาคม 2569",
     });
     return;
   }
@@ -167,46 +174,40 @@ const Posttest = () => {
     return;
   }
 
-    try {
-      const res = await api.post("/index.php?page=food-log&action=submit_test", {
-        test_type: "post",
-        score: score,
-        user_id: user.user_id // ส่ง ID ไปยืนยัน
-      });
+  try {
+    const res = await api.post("/index.php?page=food-log&action=submit_test", {
+      test_type: "post",
+      score: score,
+      user_id: user.user_id 
+    });
 
-      if (res.data.status === "success") {
-        toast({
-          title: "บันทึกสำเร็จ",
-          description: res.data.message,
-        });
-        
-      // 🌟 2. อัปเดตข้อมูลในเครื่อง (เปลี่ยนจาก pretest_done เป็น posttest_done)
+    if (res.data.status === "success") {
+      toast({ title: "บันทึกสำเร็จ", description: res.data.message });
+
       const updatedUser = { 
         ...user, 
-        posttest_done: 1, // แก้ไขจุดนี้
-        total_points: user.total_points + 1, // เพิ่มแต้มในเครื่องด้วยเพื่อให้ UI อัปเดตทันที
+        posttest_done: 1, 
+        total_points: (user.total_points || 0) + 1, 
         updated_at: new Date().toISOString() 
       };
       localStorage.setItem("user", JSON.stringify(updatedUser));
       setSubmitted(true);
-    }
-      } else {
-        toast({
-          variant: "destructive",
-          title: "บันทึกคะแนนไม่สำหรับ",
-          description: res.data.message,
-        });
-      }
-    } catch (err: any) {
-      // จัดการ Error 401 หรือปัญหา Network
-      const errMsg = err.response?.data?.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้";
+    } else {
       toast({
         variant: "destructive",
-        title: "เกิดข้อผิดพลาด",
-        description: errMsg,
+        title: "บันทึกคะแนนไม่สำเร็จ",
+        description: res.data.message,
       });
     }
-  };
+  } catch (err: any) {
+    const errMsg = err.response?.data?.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้";
+    toast({
+      variant: "destructive",
+      title: "เกิดข้อผิดพลาด",
+      description: errMsg,
+    });
+  }
+};
   
   const handleFinish = () => {
     navigate("/splash");
