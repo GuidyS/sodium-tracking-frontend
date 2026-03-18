@@ -83,7 +83,7 @@ const Dashboard = () => {
   }
 
   const now = new Date();
-  const isPosttestPeriod = now >= new Date('2026-03-20') && now <= new Date('2026-03-31');
+  const isPosttestPeriod = now >= new Date('2026-03-18') && now <= new Date('2026-03-31');
   const needsPosttest = userData?.posttest_done === 0 && isPosttestPeriod;
 
   return (
