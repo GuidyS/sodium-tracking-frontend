@@ -61,10 +61,6 @@ const Splash = () => {
       
           // 🌟 3. เรียกใช้ setTimeout โดยใช้ตัวแปร destination ที่ประกาศไว้ด้านบน
           setTimeout(() => navigate(destination, { replace: true }), 2000);
-          }
-          
-          // หน่วงเวลาให้โชว์โลโก้สวยๆ สักครู่
-          setTimeout(() => navigate(destination), 2000); 
         } else {
           throw new Error("Invalid session");
         }
