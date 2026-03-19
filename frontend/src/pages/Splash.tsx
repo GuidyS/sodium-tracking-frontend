@@ -47,18 +47,20 @@ const Splash = () => {
         
         if (response.data.status === "success") {
           const user = response.data.user;
-          // อัปเดตข้อมูลล่าสุดจาก DB ลงในเครื่อง
           localStorage.setItem("user", JSON.stringify(user));
           
-          // 🌟 3. ตรวจสอบสถานะการทำ Pretest (เช็คจาก DB โดยตรงจะแม่นยำที่สุด)
           const isPretestDone = user.pretest_done == 1 || user.pretest_done === "1";
-          // 🌟 เพิ่มเงื่อนไข: ถ้าผู้ใช้ตั้งใจจะเข้าหน้า posttest และทำ pretest แล้ว ให้ไปหน้านั้น
+      
+          // 🌟 1. ต้องประกาศตัวแปร destination ไว้ก่อน
+          let destination = isPretestDone ? "/dashboard" : "/pretest";
+      
+          // 🌟 2. ถ้าผู้ใช้กำลังจะไป posttest ให้เปลี่ยนค่า destination เป็น /posttest
           if (currentPath === "/posttest" && isPretestDone) {
-              navigate("/posttest", { replace: true });
-          } else {
-              // Logic ปกติ
-              const destination = isPretestDone ? "/dashboard" : "/pretest";
-              setTimeout(() => navigate(destination), 2000); 
+              destination = "/posttest";
+          }
+      
+          // 🌟 3. เรียกใช้ setTimeout โดยใช้ตัวแปร destination ที่ประกาศไว้ด้านบน
+          setTimeout(() => navigate(destination, { replace: true }), 2000);
           }
           
           // หน่วงเวลาให้โชว์โลโก้สวยๆ สักครู่
