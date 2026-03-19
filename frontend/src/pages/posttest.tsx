@@ -105,7 +105,7 @@ const questions: Question[] = [
 
 const choiceLabels = ["A", "B", "C", "D"];
 
-const Posttest = () => {
+const posttest = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [current, setCurrent] = useState(0);
@@ -390,4 +390,4 @@ const Posttest = () => {
   );
 };
 
-export default Posttest;
+export default posttest;
