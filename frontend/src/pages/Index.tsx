@@ -13,7 +13,7 @@ import Medicine from "./Medicine";
 import Splash from "./Splash";
 import Points from "./Points";
 import Pretest from "./Pretest"; 
-import Posttest from "./posttest";
+import posttest from "./posttest";
 
 // 1. แก้ไข: Layout สำหรับจัดหน้า Auth ให้อยู่กึ่งกลางเป๊ะ
 const AuthLayout = () => (
@@ -51,7 +51,7 @@ const Index = () => {
         <Route path="/medicine" element={<Medicine />} />
         <Route path="/points" element={<Points />} />
         <Route path="/pretest" element={<Pretest />} />
-        <Route path="/posttest" element={<Posttest />} />
+        <Route path="/posttest" element={<posttest />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />
