@@ -30,7 +30,7 @@ const Dashboard = () => {
   });
 
   useEffect(() => {
-    
+
     if (!userData) {
       navigate("/login", { replace: true });
       return;
