@@ -21,6 +21,7 @@ const Splash = () => {
   useEffect(() => {
     const verifyAndPersist = async () => {
       // 🌟 1. ตรวจสอบข้อมูลจาก URL (กรณีเพิ่ง Redirect กลับจาก Google Login)
+      const currentPath = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
       const userFromUrl = params.get("user");
 
