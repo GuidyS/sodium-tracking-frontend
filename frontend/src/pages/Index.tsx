@@ -13,7 +13,7 @@ import Medicine from "./Medicine";
 import Splash from "./Splash";
 import Points from "./Points";
 import Pretest from "./Pretest"; 
-import Posttest from "./Posttest"
+import Posttest from "./Posttest";
 
 // 1. แก้ไข: Layout สำหรับจัดหน้า Auth ให้อยู่กึ่งกลางเป๊ะ
 const AuthLayout = () => (
