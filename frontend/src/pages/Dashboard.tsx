@@ -32,7 +32,7 @@ const Dashboard = () => {
   useEffect(() => {
     
     if (!userData) {
-      return <Navigate to="/" replace />;
+      return <Navigate to="/login" replace />;
     }
     
     if (userData && userData.pretest_done === 0) {
