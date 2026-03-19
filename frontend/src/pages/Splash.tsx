@@ -51,7 +51,14 @@ const Splash = () => {
           
           // 🌟 3. ตรวจสอบสถานะการทำ Pretest (เช็คจาก DB โดยตรงจะแม่นยำที่สุด)
           const isPretestDone = user.pretest_done == 1 || user.pretest_done === "1";
-          const destination = isPretestDone ? "/dashboard" : "/pretest";
+          // 🌟 เพิ่มเงื่อนไข: ถ้าผู้ใช้ตั้งใจจะเข้าหน้า posttest และทำ pretest แล้ว ให้ไปหน้านั้น
+          if (currentPath === "/posttest" && isPretestDone) {
+              navigate("/posttest", { replace: true });
+          } else {
+              // Logic ปกติ
+              const destination = isPretestDone ? "/dashboard" : "/pretest";
+              setTimeout(() => navigate(destination), 2000); 
+          }
           
           // หน่วงเวลาให้โชว์โลโก้สวยๆ สักครู่
           setTimeout(() => navigate(destination), 2000); 
