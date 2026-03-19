@@ -18,6 +18,7 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ForgotPassword from "./pages/ForgotPassword";
 import Pretest from "./pages/Pretest";
+import Posttest from "./pages/Posttest";
 
 const queryClient = new QueryClient();
 
