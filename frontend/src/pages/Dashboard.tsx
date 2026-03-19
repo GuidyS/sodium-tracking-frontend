@@ -105,7 +105,7 @@ const Dashboard = () => {
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-[hsl(30,90%,55%)] text-white p-4 rounded-2xl mb-6 shadow-lg flex justify-between items-center"
+          className="bg-[hsl(215,90%,50%)] text-white p-4 rounded-2xl mb-6 shadow-lg flex justify-between items-center"
         >
           <div>
             <p className="font-bold">แบบทดสอบหลังเรียนเปิดแล้ว!</p>
@@ -113,7 +113,7 @@ const Dashboard = () => {
           </div>
           <button 
             onClick={() => navigate("/posttest")}
-            className="bg-white text-[hsl(30,90%,55%)] px-4 py-2 rounded-xl text-sm font-bold shadow-sm"
+            className="bg-white text-[hsl(215,90%,50%)] px-4 py-2 rounded-xl text-sm font-bold shadow-sm"
           >
             ไปทำเลย
           </button>
