@@ -28,7 +28,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const user = userData ? JSON.parse(userData) : null;
 
   // 🌟 ถ้าไม่ใช่ Admin ให้ดีดกลับไปหน้า Dashboard ปกติ
-  if (!user || user.user_role !== 'Admin') {
+  if (!user || user.user_role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
   }
   return <>{children}</>;
