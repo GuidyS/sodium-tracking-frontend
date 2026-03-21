@@ -40,6 +40,9 @@ const AdminDashboard = () => {
   const [genderData, setGenderData] = useState<any[]>([]);
   const [ageData, setAgeData] = useState<any[]>([]);
   const [itemAnalysisData, setItemAnalysisData] = useState<any[]>([]);
+  const [sodiumTrend, setSodiumTrend] = useState<any[]>([]);
+  const [overallCompare, setOverallCompare] = useState<any[]>([]);
+  const [pretestPieData, setPretestPieData] = useState<any>({});
   
   // Food & Location States
   const [foods, setFoods] = useState<FoodItem[]>([]);
@@ -69,6 +72,9 @@ const AdminDashboard = () => {
         setGenderData(d.gender_data || []);
         setAgeData(d.age_data || []);
         setItemAnalysisData(d.item_analysis || []);
+        setSodiumTrend(d.sodium_trend || []);
+        setOverallCompare(d.overall_compare || []);
+        setPretestPieData(d.pretest_pie_data || {});
       }
     } catch (e) { console.error(e); }
   };
@@ -110,8 +116,48 @@ const AdminDashboard = () => {
       <div className="mx-auto max-w-5xl px-4 pt-6">
         {activeTab === "dashboard" && (
           <div className="space-y-6">
-            {/* 🌟 นำ Summary Cards และ กราฟกลับมา */}
-            {/* 1. สถิติโซเดียมรวม (Line Chart) */}
+            
+            <div className="glass-card rounded-2xl p-5">
+              <h2 className="text-base font-semibold mb-6">ข้อมูลทั่วไป (Demographics)</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center">
+                {/* สัดส่วนเพศ */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">สัดส่วนเพศ</p>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie data={genderData} dataKey="value" cx="50%" cy="50%" outerRadius={70} label>
+                        {genderData.map((entry, i) => {
+                          let color = "hsl(0, 0%, 70%)";
+                          if (entry.name === 'ชาย') color = "hsl(200, 70%, 50%)";
+                          if (entry.name === 'หญิง') color = "hsl(330, 70%, 60%)";
+                          if (entry.name === 'อื่นๆ') color = "hsl(45, 90%, 55%)"; // 🌟 สีเหลืองตามที่ขอ
+                          return <Cell key={i} fill={color} />;
+                        })}
+                      </Pie>
+                      <Tooltip />
+                      <Legend verticalAlign="bottom" height={36}/>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+        
+                {/* สัดส่วนช่วงอายุ */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">สัดส่วนช่วงอายุ</p>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie data={ageData} dataKey="value" cx="50%" cy="50%" outerRadius={70} label>
+                        {ageData.map((entry, i) => (
+                          <Cell key={i} fill={ageColors[i % ageColors.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend verticalAlign="bottom" height={36}/>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+            
             <div className="glass-card rounded-2xl p-5">
               <h2 className="text-base font-semibold mb-4">แนวโน้มการบริโภคโซเดียมเฉลี่ย (ทุกคน)</h2>
               <ResponsiveContainer width="100%" height={250}>
