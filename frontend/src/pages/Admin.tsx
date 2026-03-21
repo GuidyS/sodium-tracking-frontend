@@ -96,7 +96,7 @@ const AdminDashboard = () => {
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-primary">Admin Control</h1>
-          <button onClick={() => navigate("/dashboard")} className="p-2 hover:bg-accent rounded-full">
+          <button onClick={() => navigate("/login")} className="p-2 hover:bg-accent rounded-full">
             <LogOut className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
