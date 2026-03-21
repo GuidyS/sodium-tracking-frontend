@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, FileText, CheckCircle, Download, Search, Trash2, X, User, 
-  CalendarDays, Filter, Utensils, MapPin, Plus, Edit2, Save, LogOut 
+  CalendarDays, Filter, Plus, Edit2, LogOut 
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/axios";
@@ -36,21 +36,14 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<"dashboard" | "foods" | "locations">("dashboard");
   
   // Dashboard & User States
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<UserInfo[]>([]);
-  const [selectedUser, setSelectedUser] = useState<UserInfo | null>(null);
   const [summaryData, setSummaryData] = useState({ totalUsers: 0, avgPretest: 0, avgPosttest: 0 });
   const [genderData, setGenderData] = useState<any[]>([]);
   const [ageData, setAgeData] = useState<any[]>([]);
   const [itemAnalysisData, setItemAnalysisData] = useState<any[]>([]);
-  const [userSodiumData, setUserSodiumData] = useState<any[]>([]);
-  const [userScoreData, setUserScoreData] = useState<any[]>([]);
-
+  
   // Food & Location States
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingFood, setEditingFood] = useState<Partial<FoodItem> | null>(null);
 
   const userData = JSON.parse(localStorage.getItem("user") || "{}");
   const adminId = userData.user_id;
@@ -67,10 +60,15 @@ const AdminDashboard = () => {
       const res = await api.get(`/index.php?page=admin&action=summary&user_id=${adminId}`);
       if (res.data.status === "success") {
         const d = res.data.data;
-        setSummaryData({ totalUsers: d.total_users, avgPretest: d.avg_pretest, avgPosttest: d.avg_posttest });
-        setGenderData(d.gender_data);
-        setAgeData(d.age_data);
-        setItemAnalysisData(d.item_analysis);
+        // 🌟 แมพข้อมูลจาก PHP (Snake_case) เข้าสู่ React (CamelCase)
+        setSummaryData({ 
+          totalUsers: d.total_users || 0, 
+          avgPretest: d.avg_pretest || 0, 
+          avgPosttest: d.avg_posttest || 0 
+        });
+        setGenderData(d.gender_data || []);
+        setAgeData(d.age_data || []);
+        setItemAnalysisData(d.item_analysis || []);
       }
     } catch (e) { console.error(e); }
   };
@@ -89,31 +87,8 @@ const AdminDashboard = () => {
     } catch (e) { console.error(e); }
   };
 
-  const handleDeleteFood = async (id: number) => {
-    if (!window.confirm("ยืนยันการลบเมนูอาหารนี้?")) return;
-    try {
-      const res = await api.post(`/index.php?page=admin&action=delete&table=foods&id=${id}&user_id=${adminId}`);
-      if (res.data.status === "success") {
-        toast({ title: "ลบสำเร็จ" });
-        fetchFoods();
-      }
-    } catch (e) { toast({ title: "ลบไม่สำเร็จ", variant: "destructive" }); }
-  };
-
-  const handleExportCSV = async () => {
-    // ลอจิกส่งออกข้อมูลเป็น CSV ง่ายๆ
-    const res = await api.get(`/index.php?page=admin&table=users&user_id=${adminId}`);
-    const data = res.data.data;
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + "Name,Email,Pre-test,Post-test,Points\n"
-      + data.map((u: any) => `${u.full_name},${u.email},${u.pretest_score},${u.posttest_score},${u.total_points}`).join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "student_scores.csv");
-    document.body.appendChild(link);
-    link.click();
-  };
+  const genderColors = ["hsl(200, 70%, 50%)", "hsl(330, 70%, 60%)", "hsl(280, 50%, 60%)"];
+  const ageColors = ["hsl(155, 55%, 40%)", "hsl(155, 45%, 55%)", "hsl(40, 80%, 55%)", "hsl(25, 90%, 55%)"];
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -135,53 +110,106 @@ const AdminDashboard = () => {
       <div className="mx-auto max-w-5xl px-4 pt-6">
         {activeTab === "dashboard" && (
           <div className="space-y-6">
-            {/* ส่วนสถิติเดิมของคุณ */}
-            <div className="flex justify-end">
-              <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-green-700">
-                <Download className="w-4 h-4" /> ส่งออกคะแนน (CSV)
-              </button>
+            {/* 🌟 นำ Summary Cards และ กราฟกลับมา */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="glass-card rounded-2xl p-4 text-center">
+                <Users className="w-6 h-6 mx-auto text-primary mb-1" />
+                <p className="text-xs text-muted-foreground">ผู้เข้าร่วม</p>
+                <p className="text-2xl font-bold">{summaryData.totalUsers}</p>
+              </div>
+              <div className="glass-card rounded-2xl p-4 text-center">
+                <FileText className="w-6 h-6 mx-auto text-orange-500 mb-1" />
+                <p className="text-xs text-muted-foreground">Pre-test เฉลี่ย</p>
+                <p className="text-2xl font-bold">{summaryData.avgPretest}%</p>
+              </div>
+              <div className="glass-card rounded-2xl p-4 text-center">
+                <CheckCircle className="w-6 h-6 mx-auto text-green-500 mb-1" />
+                <p className="text-xs text-muted-foreground">Post-test เฉลี่ย</p>
+                <p className="text-2xl font-bold">{summaryData.avgPosttest}%</p>
+              </div>
             </div>
-            {/* ... (กราฟต่างๆ ที่คุณทำไว้) ... */}
+
+            {/* Demographics Graph */}
+            <div className="glass-card rounded-2xl p-5">
+              <h2 className="text-base font-semibold mb-4">ข้อมูลทั่วไป (Demographics)</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie data={genderData} dataKey="value" cx="50%" cy="50%" outerRadius={60} label>
+                      {genderData.map((entry, i) => <Cell key={i} fill={genderColors[i % genderColors.length]} />)}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie data={ageData} dataKey="value" cx="50%" cy="50%" outerRadius={60} label>
+                      {ageData.map((entry, i) => <Cell key={i} fill={ageColors[i % ageColors.length]} />)}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            
+            {/* Item Analysis */}
+            <div className="glass-card rounded-2xl p-5">
+              <h2 className="text-base font-semibold mb-4">สถิติวิเคราะห์รายข้อ (%)</h2>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={itemAnalysisData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="question" tick={{fontSize: 10}} />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="pretest" name="Pre-test" fill="hsl(25, 90%, 65%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="posttest" name="Post-test" fill="hsl(155, 55%, 45%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
+        {/* 🌟 Tab จัดการอาหาร */}
         {activeTab === "foods" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-bold">รายการอาหารทั้งหมด</h2>
-              <button onClick={() => { setEditingFood({}); setIsModalOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold">
+              <h2 className="text-lg font-bold">รายการอาหารทั้งหมด ({foods.length})</h2>
+              <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold shadow-lg">
                 <Plus className="w-4 h-4" /> เพิ่มอาหาร
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {foods.map(food => (
                 <div key={food.food_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center">
-                  <img src={`/foods/${food.food_image}`} className="w-16 h-16 rounded-xl object-cover bg-accent" alt={food.food_name} />
-                  <div className="flex-1">
-                    <p className="font-bold">{food.food_name}</p>
-                    <p className="text-xs text-muted-foreground">{food.sodium_mg} mg | {food.location_name}</p>
+                  <img src={`/foods/${food.food_image}`} className="w-16 h-16 rounded-xl object-cover bg-accent" alt="" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold truncate">{food.food_name}</p>
+                    <p className="text-xs text-muted-foreground">{food.sodium_mg} mg | {food.location_name || 'ไม่ระบุสถานที่'}</p>
                   </div>
                   <div className="flex gap-2">
                     <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
-                    <button onClick={() => handleDeleteFood(food.food_id)} className="p-2 text-destructive hover:bg-destructive/10 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                    <button className="p-2 text-destructive hover:bg-destructive/10 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
               ))}
+              {foods.length === 0 && <p className="text-center text-muted-foreground py-10 col-span-2">ยังไม่มีข้อมูลอาหารในระบบ</p>}
             </div>
           </motion.div>
         )}
 
+        {/* 🌟 Tab จัดการสถานที่ */}
         {activeTab === "locations" && (
            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card p-6 rounded-2xl">
              <h2 className="text-lg font-bold mb-4">จัดการสถานที่บันทึกอาหาร</h2>
-             {/* ตารางจัดการ Location อย่างง่าย */}
              <div className="space-y-3">
                {locations.map(loc => (
-                 <div key={loc.location_id} className="flex justify-between items-center p-3 bg-accent/20 rounded-xl">
-                   <span>{loc.location_name}</span>
-                   <button className="text-destructive"><Trash2 className="w-4 h-4" /></button>
+                 <div key={loc.location_id} className="flex justify-between items-center p-4 bg-accent/20 rounded-xl">
+                   <span className="font-medium">{loc.location_name}</span>
+                   <button className="text-destructive hover:scale-110 transition-transform"><Trash2 className="w-4 h-4" /></button>
                  </div>
                ))}
+               {locations.length === 0 && <p className="text-center text-muted-foreground py-6">ยังไม่มีข้อมูลสถานที่</p>}
              </div>
            </motion.div>
         )}
