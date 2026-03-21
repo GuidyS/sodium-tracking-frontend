@@ -52,7 +52,11 @@ const Index = () => {
 
       {/* Protected Routes (ต้อง Login ก่อน) */}
       <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={
+          user?.user_role === 'Admin' 
+            ? <Navigate to="/admin" replace /> 
+            : <Dashboard />
+        } />
         <Route path="/settings" element={<Settings />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/food-log" element={<FoodLog />} />
