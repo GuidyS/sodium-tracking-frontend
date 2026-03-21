@@ -50,16 +50,24 @@ const Splash = () => {
           localStorage.setItem("user", JSON.stringify(user));
           
           const isPretestDone = user.pretest_done == 1 || user.pretest_done === "1";
+          const isAdmin = user.user_role === 'Admin'; // 🌟 1. เช็คว่าเป็น Admin หรือไม่
       
           // 🌟 1. ต้องประกาศตัวแปร destination ไว้ก่อน
           let destination = isPretestDone ? "/dashboard" : "/pretest";
       
-          // 🌟 2. ถ้าผู้ใช้กำลังจะไป posttest ให้เปลี่ยนค่า destination เป็น /posttest
           if (currentPath === "/posttest" && isPretestDone) {
               destination = "/posttest";
           }
+
+          // 🌟 2. ลอจิกการเลือกหน้าปลายทางใหม่
+          if (isAdmin) {
+              destination = "/admin"; // ถ้าเป็น Admin ให้ไปหน้าจัดการทันที
+          } else if (!isPretestDone) {
+              destination = "/pretest"; // ถ้ายังไม่ทำ Pre-test ให้ไปทำก่อน
+          } else if (currentPath === "/posttest") {
+              destination = "/posttest"; // ถ้าตั้งใจจะมาทำ Post-test ให้ไปหน้าเดิม
+          }
       
-          // 🌟 3. เรียกใช้ setTimeout โดยใช้ตัวแปร destination ที่ประกาศไว้ด้านบน
           setTimeout(() => navigate(destination, { replace: true }), 2000);
         } else {
           throw new Error("Invalid session");
