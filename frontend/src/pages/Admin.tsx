@@ -111,78 +111,54 @@ const AdminDashboard = () => {
         {activeTab === "dashboard" && (
           <div className="space-y-6">
             {/* 🌟 นำ Summary Cards และ กราฟกลับมา */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="glass-card rounded-2xl p-4 text-center">
-                <Users className="w-6 h-6 mx-auto text-primary mb-1" />
-                <p className="text-xs text-muted-foreground">ผู้เข้าร่วม</p>
-                <p className="text-2xl font-bold">{summaryData.totalUsers}</p>
-              </div>
-              <div className="glass-card rounded-2xl p-4 text-center">
-                <FileText className="w-6 h-6 mx-auto text-orange-500 mb-1" />
-                <p className="text-xs text-muted-foreground">Pre-test เฉลี่ย</p>
-                <p className="text-2xl font-bold">{summaryData.avgPretest}%</p>
-              </div>
-              <div className="glass-card rounded-2xl p-4 text-center">
-                <CheckCircle className="w-6 h-6 mx-auto text-green-500 mb-1" />
-                <p className="text-xs text-muted-foreground">Post-test เฉลี่ย</p>
-                <p className="text-2xl font-bold">{summaryData.avgPosttest}%</p>
-              </div>
-            </div>
-
-            {/* Demographics Graph */}
+            {/* 1. สถิติโซเดียมรวม (Line Chart) */}
             <div className="glass-card rounded-2xl p-5">
-              <h2 className="text-base font-semibold mb-6">ข้อมูลทั่วไป (Demographics)</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center">
-                
-                {/* กราฟสัดส่วนเพศ */}
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">สัดส่วนเพศ</p>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie data={genderData} dataKey="value" cx="50%" cy="50%" outerRadius={70} label>
-                        {genderData.map((entry, i) => (
-                          <Cell key={i} fill={genderColors[i % genderColors.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend verticalAlign="bottom" height={36}/> {/* 🌟 เพิ่มคำอธิบายสี */}
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-            
-                {/* กราฟช่วงอายุ */}
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">สัดส่วนช่วงอายุ</p>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie data={ageData} dataKey="value" cx="50%" cy="50%" outerRadius={70} label>
-                        {ageData.map((entry, i) => (
-                          <Cell key={i} fill={ageColors[i % ageColors.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend verticalAlign="bottom" height={36}/> {/* 🌟 เพิ่มคำอธิบายสี */}
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-            
-              </div>
-            </div>
-            
-            {/* Item Analysis */}
-            <div className="glass-card rounded-2xl p-5">
-              <h2 className="text-base font-semibold mb-4">สถิติวิเคราะห์รายข้อ (%)</h2>
+              <h2 className="text-base font-semibold mb-4">แนวโน้มการบริโภคโซเดียมเฉลี่ย (ทุกคน)</h2>
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={itemAnalysisData}>
+                <LineChart data={sodiumTrend}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="question" tick={{fontSize: 10}} />
+                  <XAxis dataKey="date" tick={{fontSize: 10}} />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="avg_sodium" name="โซเดียมเฉลี่ย (mg)" stroke="#3b82f6" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+        
+            {/* 2. เปรียบเทียบ % ถูก-ผิด (Stacked Bar Chart ตามดราฟของคุณ) */}
+            <div className="glass-card rounded-2xl p-5">
+              <h2 className="text-base font-semibold mb-4">สัดส่วนข้อที่ถูก-ผิด (%)</h2>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={overallCompare}>
+                  <XAxis dataKey="test_type" />
                   <YAxis domain={[0, 100]} />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="pretest" name="Pre-test" fill="hsl(25, 90%, 65%)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="posttest" name="Post-test" fill="hsl(155, 55%, 45%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="correct_percent" name="ตอบถูก" stackId="a" fill="#22c55e" />
+                  <Bar dataKey="incorrect_percent" name="ตอบผิด" stackId="a" fill="#ef4444" />
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+        
+            {/* 3. แบบ Pre-test รายข้อ (Pie Charts) */}
+            <div className="glass-card rounded-2xl p-5">
+              <h2 className="text-base font-semibold mb-6">วิเคราะห์ Pre-test รายข้อ (ถูก/ผิด)</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                  <div key={i} className="text-center">
+                    <p className="text-xs font-bold mb-2">ข้อ {i}</p>
+                    <ResponsiveContainer width="100%" height={120}>
+                      <PieChart>
+                        <Pie data={pretestPieData[`q${i}`]} dataKey="value" outerRadius={40}>
+                          <Cell fill="#22c55e" /> {/* ถูก = เขียว */}
+                          <Cell fill="#ef4444" /> {/* ผิด = แดง */}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
