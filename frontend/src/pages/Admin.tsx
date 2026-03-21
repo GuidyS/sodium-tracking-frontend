@@ -64,6 +64,9 @@ const AdminDashboard = () => {
   const [userScoreData, setUserScoreData] = useState<any[]>([]);
   const [itemAnalysisData, setItemAnalysisData] = useState<any[]>([]);
 
+  const userData = localStorage.getItem("user");
+  const adminId = userData ? JSON.parse(userData).user_id : null;
+
   useEffect(() => {
     fetchSummary();
   }, [dateRange, customStartDate, customEndDate]);
@@ -78,7 +81,10 @@ const AdminDashboard = () => {
 
   const fetchSummary = async () => {
     try {
-      const res = await api.get(`/index.php?page=admin&action=summary${dateParams()}`);
+      const res = await api.get(`/index.php?page=admin&action=summary${dateParams()}`, {
+        params: { user_id: adminId } // ส่งไปยืนยันสิทธิ์ที่ backend
+      });
+      
       if (res.data.status === "success") {
         const d = res.data.data;
         setSummaryData({
@@ -92,6 +98,15 @@ const AdminDashboard = () => {
       }
     } catch (e) {
       console.error("Failed to fetch summary:", e);
+      // 🌟 แจ้งเตือนถ้าไม่มีสิทธิ์
+      if (e.response?.status === 403) {
+        toast({ 
+          variant: "destructive", 
+          title: "สิทธิ์ไม่ถูกต้อง", 
+          description: "คุณไม่มีสิทธิ์เข้าถึงส่วนนี้" 
+        });
+        navigate("/dashboard");
+      }
     }
   };
 
@@ -99,7 +114,10 @@ const AdminDashboard = () => {
     if (!searchQuery.trim()) return;
     setIsSearching(true);
     try {
-      const res = await api.get(`/index.php?page=admin&action=search_user&q=${encodeURIComponent(searchQuery)}`);
+      const res = await api.get(`/index.php?page=admin&action=search_user`, {
+        params: { q: searchQuery, user_id: adminId }
+      });
+      
       if (res.data.status === "success" && Array.isArray(res.data.data)) {
         setSearchResults(res.data.data);
       } else {
@@ -115,7 +133,10 @@ const AdminDashboard = () => {
 
   const fetchUserDetail = async (userId: string) => {
     try {
-      const res = await api.get(`/index.php?page=admin&action=user_detail&user_id=${userId}${dateParams()}`);
+      const res = await api.get(`/index.php?page=admin&action=user_detail&user_id=${userId}${dateParams()}`, {
+        params: { user_id: adminId } // 🌟 เพิ่มบรรทัดนี้เพื่อความปลอดภัย
+      });
+      
       if (res.data.status === "success") {
         const d = res.data.data;
         if (d.sodium_data) setUserSodiumData(d.sodium_data);
