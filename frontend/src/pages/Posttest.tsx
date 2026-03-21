@@ -173,12 +173,18 @@ const Posttest = () => {
       });
       return;
     }
+
+    const testResults = answers.map((ans, i) => ({
+        q: i + 1, // ข้อที่ 1-8
+        correct: ans === questions[i].correctIndex ? 1 : 0 // 1=ถูก, 0=ผิด
+    }));
   
     try {
       const res = await api.post("/index.php?page=food-log&action=submit_test", {
         test_type: "post",
         score: score,
-        user_id: user.user_id 
+        user_id: user.user_id,
+        results: testResults
       });
   
       if (res.data.status === "success") {
