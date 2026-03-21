@@ -14,6 +14,7 @@ import Splash from "./Splash";
 import Points from "./Points";
 import Pretest from "./Pretest"; 
 import Posttest from "./Posttest";
+import AdminDashboard from "./Admin";
 
 // 1. แก้ไข: Layout สำหรับจัดหน้า Auth ให้อยู่กึ่งกลางเป๊ะ
 const AuthLayout = () => (
@@ -52,6 +53,7 @@ const Index = () => {
         <Route path="/points" element={<Points />} />
         <Route path="/pretest" element={<Pretest />} />
         <Route path="/posttest" element={<Posttest />} />
+        <Route path="/admin" element={<AdminDashboard />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />
