@@ -87,7 +87,7 @@ const AdminDashboard = () => {
     } catch (e) { console.error(e); }
   };
 
-  const genderColors = ["hsl(200, 70%, 50%)", "hsl(330, 70%, 60%)", "hsl(280, 50%, 60%)"];
+  const genderColors = ["hsl(200, 70%, 50%)", "hsl(330, 70%, 60%)", "hsl(280, 50%, 60%)", "hsl(45, 90%, 55%)"];
   const ageColors = ["hsl(155, 55%, 40%)", "hsl(155, 45%, 55%)", "hsl(40, 80%, 55%)", "hsl(25, 90%, 55%)"];
 
   return (
