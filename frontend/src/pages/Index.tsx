@@ -23,6 +23,17 @@ const AuthLayout = () => (
   </div>
 );
 
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const userData = localStorage.getItem("user");
+  const user = userData ? JSON.parse(userData) : null;
+
+  // 🌟 ถ้าไม่ใช่ Admin ให้ดีดกลับไปหน้า Dashboard ปกติ
+  if (!user || user.user_role !== 'Admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+};
+
 // 2. แก้ไข: ประกาศ ProtectedRoute
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const user = localStorage.getItem("user");
@@ -33,13 +44,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const Index = () => {
   return (
     <Routes>
-      {/* Public Routes: หน้าที่ไม่ต้อง Login */}
+      {/* Public Routes */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<Auth />} />
       </Route>
       <Route path="/splash" element={<Splash />} />
 
-      {/* Protected Routes: หน้าที่ต้อง Login ก่อน */}
+      {/* Protected Routes (ต้อง Login ก่อน) */}
       <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/settings" element={<Settings />} />
@@ -53,7 +64,13 @@ const Index = () => {
         <Route path="/points" element={<Points />} />
         <Route path="/pretest" element={<Pretest />} />
         <Route path="/posttest" element={<Posttest />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+        
+        {/* 🌟 บรรทัดที่ต้องแก้: ใส่ AdminRoute ครอบไว้ 🌟 */}
+        <Route path="/admin" element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        } />
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />
