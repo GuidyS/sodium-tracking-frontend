@@ -93,7 +93,9 @@ const Auth = () => {
           const user = response.data.user;
           localStorage.setItem("user", JSON.stringify(response.data.user));
 
-          if (user.pretest_done === 0) {
+          if (user.user_role === 'Admin') {
+            navigate("/admin"); // ถ้าเป็น Admin ให้ไปหน้าจัดการทันที
+          } else if (user.pretest_done === 0) {
             navigate("/pretest");
           } else {
             navigate("/splash");
