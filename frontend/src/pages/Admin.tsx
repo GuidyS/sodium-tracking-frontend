@@ -157,40 +157,45 @@ const AdminDashboard = () => {
   };
 
   // ===== Generic Handle Save & Delete =====
-  const handleSave = async () => {
-    const action = formData.id ? 'update' : 'create';
+const handleSave = async () => {
+    const action = formData.id || formData.user_id || formData.food_id || formData.herb_id || formData.location_id ? 'update' : 'create';
     const table = editMode === 'food' ? 'foods' : editMode === 'location' ? 'locations' : editMode === 'herb' ? 'herbs' : 'users';
     
+    // ดึง ID ที่ถูกต้องตามตาราง
+    const id = formData.food_id || formData.herb_id || formData.location_id || formData.user_id || formData.id;
+
     try {
-      // ใช้ FormData กรณีมีรูปภาพ
-      const body = new FormData();
-      Object.keys(formData).forEach(key => body.append(key, formData[key]));
+      const data = new FormData();
+      Object.keys(formData).forEach(key => data.append(key, formData[key]));
       
-      const res = await api.post(`/index.php?page=admin&table=${table}&action=${action}&user_id=${adminId}`, body);
-      if (res.data.status === "success") {
-        toast({ title: res.data.message });
-        setDialogOpen(false);
-        if (activeTab === "foods") fetchFoods();
-        if (activeTab === "locations") fetchLocations();
-        if (activeTab === "herbs") fetchHerbs();
-        if (activeTab === "users") fetchUsers();
+      // แนบไฟล์รูปภาพตาม Key ที่ Backend รอรับ
+      if (selectedFile) {
+        const fileKey = table === 'foods' ? 'food_image' : 'image_path';
+        data.append(fileKey, selectedFile);
       }
-    } catch { toast({ title: "บันทึกข้อมูลไม่สำเร็จ", variant: "destructive" }); }
+      
+      // ส่ง ID ไปใน URL สำหรับกรณี Update ตามที่ PHP ต้องการ
+      const url = `/index.php?page=admin&table=${table}&action=${action}&user_id=${adminId}${id ? `&id=${id}` : ''}`;
+      
+      const res = await api.post(url, data);
+      if (res.data.status === "success") {
+        toast({ title: "สำเร็จ", description: res.data.message });
+        setDialogOpen(false);
+        setSelectedFile(null);
+        refreshData();
+      }
+    } catch (e) { toast({ title: "เกิดข้อผิดพลาด", variant: "destructive" }); }
   };
 
   const confirmDelete = async () => {
-    const { type, id } = deleteDialog;
     try {
-      const res = await api.post(`/index.php?page=admin&table=${type === 'food' ? 'foods' : type === 'location' ? 'locations' : type === 'herb' ? 'herbs' : 'users'}&action=delete&id=${id}&user_id=${adminId}`);
+      const res = await api.post(`/index.php?page=admin&table=${deleteDialog.table}&action=delete&id=${deleteDialog.id}&user_id=${adminId}`);
       if (res.data.status === "success") {
-        toast({ title: "ลบข้อมูลสำเร็จ" });
-        if (activeTab === "foods") fetchFoods();
-        if (activeTab === "locations") fetchLocations();
-        if (activeTab === "herbs") fetchHerbs();
-        if (activeTab === "users") fetchUsers();
+        toast({ title: "ลบสำเร็จ" });
+        refreshData();
       }
-    } catch { toast({ title: "ลบไม่สำเร็จ", variant: "destructive" }); }
-    setDeleteDialog({ open: false, type: "", id: null, name: "" });
+    } catch (e) { console.error(e); }
+    setDeleteDialog({ open: false, table: "", id: null, name: "" });
   };
 
   const genderColors = ["hsl(200, 70%, 50%)", "hsl(330, 70%, 60%)", "hsl(45, 90%, 55%)", "hsl(0, 0%, 70%)"];
@@ -396,16 +401,20 @@ const AdminDashboard = () => {
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {foods.map(food => (
+              {foods.map((food) => (
                 <div key={food.food_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center">
-                  <img src={`/foods/${food.food_image}`} className="w-14 h-14 rounded-xl object-cover bg-accent" alt="" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold truncate">{food.food_name}</p>
-                    <p className="text-[10px] text-muted-foreground">{food.sodium_mg} mg | {food.location_name}</p>
+                  <img src={`/foods/${food.food_image}`} className="w-14 h-14 rounded-xl object-cover" />
+                  <div className="flex-1">
+                    <p className="text-sm font-bold">{food.food_name}</p>
+                    <p className="text-xs text-muted-foreground">{food.sodium_mg} mg</p>
                   </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => { setEditMode('food'); setFormData(food); setDialogOpen(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => setDeleteDialog({ open: true, type: "food", id: food.food_id, name: food.food_name })} className="p-2 text-destructive hover:bg-destructive/10 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setEditMode('food'); setFormData(food); setDialogOpen(true); }}>
+                      <Edit2 className="w-4 h-4 text-blue-500" />
+                    </button>
+                    <button onClick={() => setDeleteDialog({ open: true, table: "foods", id: food.food_id, name: food.food_name })}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -487,36 +496,35 @@ const AdminDashboard = () => {
 
       {/* ==================== DIALOGS ==================== */}
       
-      {/* 🟢 Dialog สำหรับ Create/Update */}
+      {/* 🟢 Dialog สำหรับ Create/Update (ปรับฟิลด์ให้ตรง DB) */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{formData.id ? 'แก้ไข' : 'เพิ่ม'} {editMode === 'food' ? 'เมนูอาหาร' : editMode === 'location' ? 'สถานที่' : editMode === 'herb' ? 'สมุนไพร/ยา' : 'ผู้ใช้'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{formData.id ? 'แก้ไข' : 'เพิ่ม'}ข้อมูล</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             {editMode === 'food' && (
               <>
                 <div><Label>ชื่ออาหาร</Label><Input value={formData.food_name || ''} onChange={e => setFormData({...formData, food_name: e.target.value})} /></div>
                 <div><Label>โซเดียม (mg)</Label><Input type="number" value={formData.sodium_mg || ''} onChange={e => setFormData({...formData, sodium_mg: e.target.value})} /></div>
                 <div><Label>ID สถานที่</Label><Input type="number" value={formData.location_id || ''} onChange={e => setFormData({...formData, location_id: e.target.value})} /></div>
+                <div><Label>รูปภาพอาหาร</Label><Input type="file" accept="image/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} /></div>
               </>
-            )}
-            {editMode === 'location' && (
-              <div><Label>ชื่อสถานที่</Label><Input value={formData.location_name || ''} onChange={e => setFormData({...formData, location_name: e.target.value})} /></div>
             )}
             {editMode === 'herb' && (
               <>
                 <div><Label>ชื่อสมุนไพร/ยา</Label><Input value={formData.title || ''} onChange={e => setFormData({...formData, title: e.target.value})} /></div>
                 <div><Label>รายละเอียด</Label><Textarea value={formData.detail || ''} onChange={e => setFormData({...formData, detail: e.target.value})} /></div>
                 <div><Label>คำเตือน</Label><Textarea value={formData.warning || ''} onChange={e => setFormData({...formData, warning: e.target.value})} /></div>
+                <div><Label>รูปภาพ</Label><Input type="file" accept="image/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} /></div>
               </>
             )}
             {editMode === 'user' && (
               <>
                 <div><Label>ชื่อ-นามสกุล</Label><Input value={formData.full_name || ''} onChange={e => setFormData({...formData, full_name: e.target.value})} /></div>
-                <div><Label>แต้มสะสม</Label><Input type="number" value={formData.total_points || ''} onChange={e => setFormData({...formData, total_points: e.target.value})} /></div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><Label>Pre-test Score</Label><Input type="number" value={formData.pretest_score || ''} onChange={e => setFormData({...formData, pretest_score: e.target.value})} /></div>
-                  <div><Label>Post-test Score</Label><Input type="number" value={formData.posttest_score || ''} onChange={e => setFormData({...formData, posttest_score: e.target.value})} /></div>
+                  <div><Label>เพศ</Label><Input value={formData.gender || ''} onChange={e => setFormData({...formData, gender: e.target.value})} /></div>
+                  <div><Label>อายุ</Label><Input type="number" value={formData.age || ''} onChange={e => setFormData({...formData, age: e.target.value})} /></div>
                 </div>
+                <div><Label>แต้มสะสม</Label><Input type="number" value={formData.total_points || ''} onChange={e => setFormData({...formData, total_points: e.target.value})} /></div>
               </>
             )}
           </div>
@@ -527,17 +535,16 @@ const AdminDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* 🔴 AlertDialog สำหรับยืนยันการลบ */}
+      {/* 🔴 AlertDialog สำหรับยืนยันการลบ (ตรงกับ admin.php) */}
       <AlertDialog open={deleteDialog.open} onOpenChange={v => !v && setDeleteDialog(d => ({ ...d, open: false }))}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>ยืนยันการลบ</AlertDialogTitle><AlertDialogDescription>คุณต้องการลบ "{deleteDialog.name}" ใช่หรือไม่? ข้อมูลประวัติที่เกี่ยวข้องจะถูกลบไปด้วย</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>ยืนยันการลบ</AlertDialogTitle><AlertDialogDescription>คุณต้องการลบ "{deleteDialog.name}" ใช่หรือไม่?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">ลบข้อมูล</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-white">ลบข้อมูล</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </div>
   );
 };
