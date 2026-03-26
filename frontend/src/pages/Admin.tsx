@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, FileText, CheckCircle, Search, Trash2, X, User,
-  CalendarDays, Filter, Plus, Edit2, LogOut, Pill, MapPin, UtensilsCrossed
+  CalendarDays, Filter, Plus, Edit2, LogOut, Pill, MapPin, UtensilsCrossed, ImageIcon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/axios";
@@ -206,45 +206,54 @@ const AdminDashboard = () => {
       return;
     }
   
-    const action = formData.food_id || formData.id ? 'update' : 'create';
-    const table = 'foods';
-    const id = formData.food_id || formData.id;
+    const action = (formData.food_id || formData.herb_id || formData.user_id || formData.id) ? 'update' : 'create';
+    const table = editMode === 'food' ? 'foods' : 
+                editMode === 'herb' ? 'herbs' : 
+                editMode === 'user' ? 'users' : 'locations';
+    
+    const id = formData.food_id || formData.herb_id || formData.user_id || formData.id;
   
     try {
       const data = new FormData();
-      
-      // กำหนดลอจิก has_restaurant อัตโนมัติก่อนส่ง
-      const locationName = locations.find(l => l.location_id === Number(formData.location_id))?.location_name || "";
-      const hasRes = locationName.match(/โรงเย็น|โรงร้อน/) ? 1 : 0;
   
-      // ใส่ข้อมูลลง FormData
-      data.append('food_name', formData.food_name);
-      data.append('sodium_mg', formData.sodium_mg);
-      data.append('location_id', formData.location_id);
-      data.append('has_restaurant', String(hasRes));
-      data.append('restaurant_id', formData.restaurant_id || 0);
-      data.append('description', formData.description || '');
-  
-      if (selectedFile) {
-        data.append('food_image', selectedFile);
+      // 🌟 แยกการส่งข้อมูลตามตารางที่กำลังแก้ไข
+      if (table === 'foods') {
+        if (!formData.food_name || !formData.sodium_mg || !formData.location_id) {
+          toast({ title: "กรุณากรอกข้อมูลอาหารให้ครบ", variant: "destructive" }); return;
+        }
+        const loc = locations.find(l => l.location_id === Number(formData.location_id));
+        const hasRes = loc?.location_name.match(/โรงเย็น|โรงร้อน/) ? 1 : 0;
+        data.append('food_name', formData.food_name);
+        data.append('sodium_mg', formData.sodium_mg);
+        data.append('location_id', formData.location_id);
+        data.append('has_restaurant', String(hasRes));
+        data.append('restaurant_id', formData.restaurant_id || 0);
+        if (selectedFile) data.append('food_image', selectedFile);
+      } 
+      else if (table === 'herbs') {
+        data.append('title', formData.title);
+        data.append('detail', formData.detail || '');
+        data.append('warning', formData.warning || '');
+        if (selectedFile) data.append('image_path', selectedFile);
+      } 
+      else if (table === 'users') {
+        data.append('full_name', formData.full_name);
+        data.append('email', formData.email); // 🌟 อย่าลืม Email
+        data.append('gender', formData.gender || '');
+        data.append('age', formData.age || 0);
+        data.append('total_points', formData.total_points || 0);
+        data.append('pretest_score', formData.pretest_score || 0);
+        data.append('posttest_score', formData.posttest_score || 0);
       }
-      
-      // ส่ง ID ผ่าน URL สำหรับ Update ตามที่ admin.php ต้องการ
+  
       const url = `/index.php?page=admin&table=${table}&action=${action}&user_id=${adminId}${id ? `&id=${id}` : ''}`;
-      
       const res = await api.post(url, data);
       
       if (res.data.status === "success") {
         toast({ title: "สำเร็จ", description: res.data.message });
-        setDialogOpen(false);
-        setSelectedFile(null);
-        refreshData(); // โหลดรายการอาหารใหม่
-      } else {
-        toast({ title: "ล้มเหลว", description: res.data.message, variant: "destructive" });
+        setDialogOpen(false); setSelectedFile(null); refreshData();
       }
-    } catch (e) {
-      toast({ title: "เกิดข้อผิดพลาดในการเชื่อมต่อ", variant: "destructive" });
-    }
+    } catch (e) { toast({ title: "เกิดข้อผิดพลาด", variant: "destructive" }); }
   };
 
   const confirmDelete = async () => {
