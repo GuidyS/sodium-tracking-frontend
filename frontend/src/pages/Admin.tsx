@@ -49,6 +49,12 @@ interface FoodItem {
   food_image: string;
 }
 
+interface RestaurantItem {
+  restaurant_id: number;
+  restaurant_name: string;
+  location_id: number; // 🌟 ต้องมีคีย์นี้เพื่อใช้ Filter กับสถานที่
+}
+
 type TabKey = "dashboard" | "foods" | "locations" | "herbs" | "users";
 
 const AdminDashboard = () => {
@@ -560,7 +566,7 @@ const refreshData = () => {
                       >
                         <option value="">-- แสดงทุกร้าน --</option>
                         {restaurants
-                          .filter(r => r.location_id === selectedLoc)
+                          .filter(r => Number(r.location_id) === Number(selectedLoc)) // 🌟 ใช้ Number() ครอบทั้งสองฝั่ง
                           .map(r => (
                             <option key={r.restaurant_id} value={r.restaurant_id}>{r.restaurant_name}</option>
                           ))
