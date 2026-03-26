@@ -87,7 +87,7 @@ const AdminDashboard = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState<"food" | "location" | "restaurant" | "herb" | "user" | null>(null);
   const [formData, setFormData] = useState<any>({});
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; type: string; id: any; name: string }>({ open: false, type: "", id: null, name: "" });
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; table: string; id: any; name: string }>({ open: false, table: "", id: null, name: "" });
 
   // ===== Effects =====
   useEffect(() => {
@@ -258,6 +258,7 @@ const AdminDashboard = () => {
   };
 
   const confirmDelete = async () => {
+    const { table, id } = deleteDialog;
     try {
       const res = await api.post(`/index.php?page=admin&table=${deleteDialog.table}&action=delete&id=${deleteDialog.id}&user_id=${adminId}`);
       if (res.data.status === "success") {
@@ -591,7 +592,7 @@ const refreshData = () => {
                   </div>
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => openFoodEdit(food)} className="p-1.5 bg-white/90 shadow-sm text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><Edit2 className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => setDeleteDialog({ open: true, type: "food", id: food.food_id, name: food.food_name })} className="p-1.5 bg-white/90 shadow-sm text-destructive rounded-lg hover:bg-destructive hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => setDeleteDialog({ open: true, table: "foods", id: food.food_id, name: food.food_name })} className="p-1.5 bg-white/90 shadow-sm text-destructive rounded-lg hover:bg-destructive hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
               ))}
