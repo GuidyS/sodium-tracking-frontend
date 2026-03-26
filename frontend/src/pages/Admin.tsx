@@ -470,78 +470,103 @@ const refreshData = () => {
         {activeTab === "foods" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-bold text-foreground">รายการอาหาร ({foods.length})</h2>
-              <Button onClick={openFoodCreate} className="gap-2 bg-primary hover:bg-primary/90">
-                <Plus className="w-4 h-4" />เพิ่มอาหาร
+              <h2 className="text-lg font-bold">จัดการรายการอาหาร ({foods.length})</h2>
+              <Button onClick={openFoodCreate} className="bg-primary hover:bg-primary/90">
+                <Plus className="w-4 h-4 mr-2" />เพิ่มอาหาร
               </Button>
             </div>
         
-            {/* 🌟 ส่วนเลือกสถานที่ (เหมือนรูปที่ 2) */}
-            <div className="space-y-4">
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                <button
-                  onClick={() => { setSelectedLoc(null); setSelectedRes(null); }}
-                  className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border ${
-                    selectedLoc === null ? "bg-primary text-white border-primary shadow-md" : "bg-card text-muted-foreground border-border hover:border-primary/50"
-                  }`}
-                >
-                  ทั้งหมด
-                </button>
-                {locations.map(loc => (
-                  <button
-                    key={loc.location_id}
-                    onClick={() => { setSelectedLoc(loc.location_id); setSelectedRes(null); }}
-                    className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border ${
-                      selectedLoc === loc.location_id ? "bg-primary text-white border-primary shadow-md" : "bg-card text-muted-foreground border-border hover:border-primary/50"
-                    }`}
-                  >
-                    {loc.location_name}
-                  </button>
-                ))}
+            <div className="glass-card p-6 rounded-3xl space-y-5 border-2 border-primary/5">
+              {/* 1. ส่วนเลือกสถานที่ (เอาเฉพาะ โรงเย็น และ โรงร้อน) */}
+              <div className="space-y-3">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">เลือกสถานที่</Label>
+                <div className="flex gap-3">
+                  {locations
+                    .filter(loc => loc.location_name.includes("โรงเย็น") || loc.location_name.includes("โรงร้อน"))
+                    .map(loc => (
+                      <button
+                        key={loc.location_id}
+                        onClick={() => {
+                          setSelectedLoc(loc.location_id);
+                          setSelectedRes(null); // ล้างค่าร้านอาหารเมื่อเปลี่ยนโรง
+                        }}
+                        className={`flex-1 py-3 rounded-2xl text-sm font-bold transition-all border-2 ${
+                          selectedLoc === loc.location_id
+                            ? "bg-primary text-white border-primary shadow-lg scale-[1.02]"
+                            : "bg-background text-muted-foreground border-border hover:border-primary/30"
+                        }`}
+                      >
+                        {loc.location_name}
+                      </button>
+                    ))}
+                </div>
               </div>
         
-              {/* 🌟 ส่วนเลือกร้านอาหาร (Dropdown) */}
-              <div className="max-w-xs">
-                <select 
-                  value={selectedRes || ""} 
-                  onChange={(e) => setSelectedRes(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full p-2.5 bg-card border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                >
-                  <option value="">-- เลือกร้านอาหารทั้งหมด --</option>
-                  {restaurants
-                    // (ทางเลือก) กรองเฉพาะร้านที่มีในสถานที่นั้นๆ ถ้าฐานข้อมูลคุณมีฟิลด์เชื่อมกัน
-                    .map(r => (
-                      <option key={r.restaurant_id} value={r.restaurant_id}>{r.restaurant_name}</option>
-                    ))
-                  }
-                </select>
-              </div>
+              {/* 2. ส่วนเลือกร้านอาหาร (Dropdown จะกรองตามโรงที่เลือก) */}
+              <AnimatePresence>
+                {selectedLoc && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }} 
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-3 overflow-hidden"
+                  >
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">เลือกร้านอาหาร</Label>
+                    <select
+                      value={selectedRes || ""}
+                      onChange={(e) => setSelectedRes(e.target.value ? Number(e.target.value) : null)}
+                      className="w-full p-3 bg-background border-2 border-border rounded-2xl text-sm font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all"
+                    >
+                      <option value="">-- แสดงทุกร้านใน{locations.find(l => l.location_id === selectedLoc)?.location_name} --</option>
+                      {restaurants
+                        .filter(r => r.location_id === selectedLoc) // 🌟 กรองร้านที่อยู่ในโรงนั้นๆ
+                        .map(r => (
+                          <option key={r.restaurant_id} value={r.restaurant_id}>{r.restaurant_name}</option>
+                        ))
+                      }
+                    </select>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
         
-            {/* รายการอาหารแสดงผลตามรูปที่ 1 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            {/* ส่วนแสดงรายการอาหาร */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {foods.map(food => (
-                <div key={food.food_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center hover:shadow-lg transition-shadow">
-                  <img 
-                    src={food.food_image ? `/foods/${food.food_image}` : "/placeholder.svg"} 
-                    className="w-16 h-16 rounded-xl object-cover bg-accent border border-border/50" 
-                    alt={food.food_name} 
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-foreground truncate">{food.food_name}</p>
-                    <p className="text-xs text-muted-foreground font-medium">{food.sodium_mg} mg</p>
-                    <p className="text-[10px] text-primary/70 mt-0.5">{food.location_name} • {food.restaurant_name || 'ทั่วไป'}</p>
+                <div key={food.food_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center hover:border-primary/30 transition-all group">
+                  <div className="relative">
+                    <img 
+                      src={food.food_image ? `/foods/${food.food_image}` : "/foods/default-food.png"} 
+                      className="w-16 h-16 rounded-2xl object-cover bg-accent group-hover:scale-105 transition-transform" 
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/foods/default-food.png" }}
+                      alt="" 
+                    />
                   </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => openFoodEdit(food)} className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
-                    <button onClick={() => setDeleteDialog({ open: true, type: "food", id: food.food_id, name: food.food_name })} className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm truncate">{food.food_name}</p>
+                    <p className="text-xs text-primary font-bold">{food.sodium_mg} <span className="text-[10px] text-muted-foreground font-normal">mg</span></p>
+                    <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> {food.location_name} • {food.restaurant_name || 'ทั่วไป'}
+                    </p>
+                  </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => openFoodEdit(food)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"><Edit2 className="w-4 h-4" /></button>
+                    <button onClick={() => setDeleteDialog({ open: true, type: "food", id: food.food_id, name: food.food_name })} className="p-2 text-destructive hover:bg-destructive/5 rounded-xl transition-colors"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
               ))}
-              {foods.length === 0 && (
-                <div className="text-center py-20 col-span-full bg-accent/10 rounded-3xl border-2 border-dashed border-border">
-                  <UtensilsCrossed className="w-10 h-10 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-muted-foreground text-sm">ไม่พบรายการอาหารในหมวดหมู่นี้</p>
+        
+              {/* กรณีไม่มีข้อมูล */}
+              {selectedLoc && foods.length === 0 && (
+                <div className="text-center py-16 col-span-full bg-accent/5 rounded-3xl border-2 border-dashed border-border/50">
+                  <UtensilsCrossed className="w-10 h-10 mx-auto text-muted-foreground/20 mb-3" />
+                  <p className="text-muted-foreground text-sm">ไม่พบเมนูอาหารในส่วนที่เลือก</p>
+                </div>
+              )}
+              
+              {!selectedLoc && (
+                <div className="text-center py-16 col-span-full">
+                  <p className="text-muted-foreground text-sm italic">กรุณาเลือกสถานที่ด้านบนเพื่อดูรายการอาหาร</p>
                 </div>
               )}
             </div>
