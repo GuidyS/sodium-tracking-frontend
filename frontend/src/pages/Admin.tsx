@@ -651,12 +651,88 @@ const refreshData = () => {
           <DialogHeader><DialogTitle>{formData.id ? 'แก้ไข' : 'เพิ่ม'}ข้อมูล</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             {editMode === 'food' && (
-              <>
-                <div><Label>ชื่ออาหาร</Label><Input value={formData.food_name || ''} onChange={e => setFormData({...formData, food_name: e.target.value})} /></div>
-                <div><Label>โซเดียม (mg)</Label><Input type="number" value={formData.sodium_mg || ''} onChange={e => setFormData({...formData, sodium_mg: e.target.value})} /></div>
-                <div><Label>ID สถานที่</Label><Input type="number" value={formData.location_id || ''} onChange={e => setFormData({...formData, location_id: e.target.value})} /></div>
-                <div><Label>รูปภาพอาหาร</Label><Input type="file" accept="image/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} /></div>
-              </>
+              <div className="space-y-4">
+                {/* ชื่ออาหาร */}
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">ชื่อเมนูอาหาร</Label>
+                  <Input 
+                    value={formData.food_name || ''} 
+                    onChange={e => setFormData({...formData, food_name: e.target.value})} 
+                    placeholder="เช่น ข้าวมันไก่"
+                    className="rounded-xl mt-1"
+                  />
+                </div>
+            
+                {/* โซเดียม */}
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">ปริมาณโซเดียม (mg)</Label>
+                  <Input 
+                    type="number" 
+                    value={formData.sodium_mg || ''} 
+                    onChange={e => setFormData({...formData, sodium_mg: e.target.value})} 
+                    placeholder="0"
+                    className="rounded-xl mt-1"
+                  />
+                </div>
+            
+                {/* 🌟 Dropdown เลือกสถานที่ (แทนการกรอก ID) */}
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">สถานที่จำหน่าย</Label>
+                  <select
+                    value={formData.location_id || ""}
+                    onChange={(e) => {
+                      const locId = e.target.value ? Number(e.target.value) : "";
+                      // เมื่อเปลี่ยนสถานที่ ให้ล้างค่าร้านอาหารเดิมทิ้งเพื่อป้องกันข้อมูลข้ามโรง
+                      setFormData({ ...formData, location_id: locId, restaurant_id: "" });
+                    }}
+                    className="w-full p-2.5 bg-background border border-input rounded-xl text-sm mt-1 focus:ring-2 focus:ring-primary/20 outline-none"
+                  >
+                    <option value="">-- เลือกสถานที่ --</option>
+                    {locations.map(loc => (
+                      <option key={loc.location_id} value={loc.location_id}>{loc.location_name}</option>
+                    ))}
+                  </select>
+                </div>
+            
+                {/* 🌟 Dropdown เลือกร้านอาหาร (แสดงเฉพาะ โรงเย็น/โรงร้อน) */}
+                <AnimatePresence>
+                  {formData.location_id && 
+                   locations.find(l => l.location_id === Number(formData.location_id))?.location_name.match(/โรงเย็น|โรงร้อน/) && (
+                    <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}>
+                      <Label className="text-xs font-bold text-primary">เลือกร้านอาหาร</Label>
+                      <select
+                        value={formData.restaurant_id || ""}
+                        onChange={(e) => setFormData({ ...formData, restaurant_id: e.target.value ? Number(e.target.value) : "" })}
+                        className="w-full p-2.5 bg-primary/5 border border-primary/20 rounded-xl text-sm mt-1 focus:ring-2 focus:ring-primary/20 outline-none font-medium"
+                      >
+                        <option value="">-- เลือกร้านอาหาร --</option>
+                        {restaurants
+                          .filter(r => r.location_id === Number(formData.location_id)) // กรองเฉพาะร้านในโรงที่เลือก
+                          .map(res => (
+                            <option key={res.restaurant_id} value={res.restaurant_id}>{res.restaurant_name}</option>
+                          ))
+                        }
+                      </select>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+            
+                {/* อัปโหลดรูปภาพ */}
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground flex items-center gap-2">
+                    <ImageIcon className="w-3 h-3" /> รูปภาพอาหาร
+                  </Label>
+                  <Input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+                    className="rounded-xl mt-1 file:bg-primary/10 file:text-primary file:border-0 file:rounded-md file:px-2"
+                  />
+                  {formData.food_image && !selectedFile && (
+                    <p className="text-[10px] text-muted-foreground mt-1 px-1">ไฟล์ปัจจุบัน: {formData.food_image}</p>
+                  )}
+                </div>
+              </div>
             )}
             {editMode === 'herb' && (
               <>
