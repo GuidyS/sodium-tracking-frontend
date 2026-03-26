@@ -199,34 +199,52 @@ const AdminDashboard = () => {
   };
 
   // ===== Generic Handle Save & Delete =====
-const handleSave = async () => {
-    const action = formData.id || formData.user_id || formData.food_id || formData.herb_id || formData.location_id ? 'update' : 'create';
-    const table = editMode === 'food' ? 'foods' : editMode === 'location' ? 'locations' : editMode === 'restaurant' ? 'restaurants' : editMode === 'herb' ? 'herbs' : 'users';
-    
-    // ดึง ID ที่ถูกต้องตามตาราง
-    const id = formData.food_id || formData.herb_id || formData.location_id || formData.user_id || formData.id;
-
+  const handleSave = async () => {
+    // 1. ตรวจสอบข้อมูลเบื้องต้น
+    if (!formData.food_name || !formData.sodium_mg || !formData.location_id) {
+      toast({ title: "กรุณากรอกข้อมูลให้ครบถ้วน", variant: "destructive" });
+      return;
+    }
+  
+    const action = formData.food_id || formData.id ? 'update' : 'create';
+    const table = 'foods';
+    const id = formData.food_id || formData.id;
+  
     try {
       const data = new FormData();
-      Object.keys(formData).forEach(key => data.append(key, formData[key]));
       
-      // แนบไฟล์รูปภาพตาม Key ที่ Backend รอรับ
+      // กำหนดลอจิก has_restaurant อัตโนมัติก่อนส่ง
+      const locationName = locations.find(l => l.location_id === Number(formData.location_id))?.location_name || "";
+      const hasRes = locationName.match(/โรงเย็น|โรงร้อน/) ? 1 : 0;
+  
+      // ใส่ข้อมูลลง FormData
+      data.append('food_name', formData.food_name);
+      data.append('sodium_mg', formData.sodium_mg);
+      data.append('location_id', formData.location_id);
+      data.append('has_restaurant', String(hasRes));
+      data.append('restaurant_id', formData.restaurant_id || 0);
+      data.append('description', formData.description || '');
+  
       if (selectedFile) {
-        const fileKey = table === 'foods' ? 'food_image' : 'image_path';
-        data.append(fileKey, selectedFile);
+        data.append('food_image', selectedFile);
       }
       
-      // ส่ง ID ไปใน URL สำหรับกรณี Update ตามที่ PHP ต้องการ
+      // ส่ง ID ผ่าน URL สำหรับ Update ตามที่ admin.php ต้องการ
       const url = `/index.php?page=admin&table=${table}&action=${action}&user_id=${adminId}${id ? `&id=${id}` : ''}`;
       
       const res = await api.post(url, data);
+      
       if (res.data.status === "success") {
         toast({ title: "สำเร็จ", description: res.data.message });
         setDialogOpen(false);
         setSelectedFile(null);
-        refreshData();
+        refreshData(); // โหลดรายการอาหารใหม่
+      } else {
+        toast({ title: "ล้มเหลว", description: res.data.message, variant: "destructive" });
       }
-    } catch (e) { toast({ title: "เกิดข้อผิดพลาด", variant: "destructive" }); }
+    } catch (e) {
+      toast({ title: "เกิดข้อผิดพลาดในการเชื่อมต่อ", variant: "destructive" });
+    }
   };
 
   const confirmDelete = async () => {
