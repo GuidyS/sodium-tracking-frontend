@@ -142,12 +142,21 @@ const AdminDashboard = () => {
 
   const fetchFoods = async () => {
     try {
+      // 1. สร้าง URL พื้นฐาน
       let url = `/index.php?page=admin&table=foods&user_id=${adminId}`;
-      if (selectedLoc) url += `&location_id=${selectedLoc}`;
-      if (selectedRes) url += `&restaurant_id=${selectedRes}`;
+      
+      // 2. ตรวจสอบว่ามีการเลือกสถานที่หรือร้านอาหารหรือไม่ แล้วเพิ่ม Query String
+      if (selectedLoc) {
+        url += `&location_id=${selectedLoc}`;
+      }
+      if (selectedRes) {
+        url += `&restaurant_id=${selectedRes}`;
+      }
       
       const res = await api.get(url);
-      if (res.data.status === "success") setFoods(res.data.data || []);
+      if (res.data.status === "success") {
+        setFoods(res.data.data || []);
+      }
     } catch { 
       toast({ title: "โหลดข้อมูลอาหารไม่สำเร็จ", variant: "destructive" }); 
     }
