@@ -470,16 +470,16 @@ const refreshData = () => {
         {activeTab === "foods" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-bold">จัดการรายการอาหาร ({foods.length})</h2>
-              <Button onClick={openFoodCreate} className="bg-primary hover:bg-primary/90">
-                <Plus className="w-4 h-4 mr-2" />เพิ่มอาหาร
+              <h2 className="text-lg font-bold text-foreground">จัดการรายการอาหาร ({foods.length})</h2>
+              <Button onClick={openFoodCreate} className="gap-2 bg-primary hover:bg-primary/90 shadow-md">
+                <Plus className="w-4 h-4" />เพิ่มอาหาร
               </Button>
             </div>
         
-            <div className="glass-card p-6 rounded-3xl space-y-5 border-2 border-primary/5">
-              {/* 1. ส่วนเลือกสถานที่ (เอาเฉพาะ โรงเย็น และ โรงร้อน) */}
+            <div className="glass-card p-6 rounded-3xl space-y-6 border-2 border-primary/5 shadow-sm">
+              {/* 1. ส่วนเลือกสถานที่หลัก (โรงเย็น / โรงร้อน) */}
               <div className="space-y-3">
-                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">เลือกสถานที่</Label>
+                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">โรงอาหารหลัก</Label>
                 <div className="flex gap-3">
                   {locations
                     .filter(loc => loc.location_name.includes("โรงเย็น") || loc.location_name.includes("โรงร้อน"))
@@ -488,9 +488,9 @@ const refreshData = () => {
                         key={loc.location_id}
                         onClick={() => {
                           setSelectedLoc(loc.location_id);
-                          setSelectedRes(null); // ล้างค่าร้านอาหารเมื่อเปลี่ยนโรง
+                          setSelectedRes(null);
                         }}
-                        className={`flex-1 py-3 rounded-2xl text-sm font-bold transition-all border-2 ${
+                        className={`flex-1 py-3.5 rounded-2xl text-sm font-bold transition-all border-2 ${
                           selectedLoc === loc.location_id
                             ? "bg-primary text-white border-primary shadow-lg scale-[1.02]"
                             : "bg-background text-muted-foreground border-border hover:border-primary/30"
@@ -502,74 +502,106 @@ const refreshData = () => {
                 </div>
               </div>
         
-              {/* 2. ส่วนเลือกร้านอาหาร (Dropdown จะกรองตามโรงที่เลือก) */}
-              <AnimatePresence>
-                {selectedLoc && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0 }} 
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-3 overflow-hidden"
+              {/* 2. ส่วนเลือกสถานที่อื่นๆ (ไม่มี Dropdown) */}
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">สถานที่อื่นๆ</Label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => { setSelectedLoc(null); setSelectedRes(null); }}
+                    className={`px-5 py-2 rounded-xl text-xs font-bold transition-all border-2 ${
+                      selectedLoc === null 
+                        ? "bg-slate-800 text-white border-slate-800 shadow-md" 
+                        : "bg-background text-muted-foreground border-border hover:border-slate-400"
+                    }`}
                   >
-                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">เลือกร้านอาหาร</Label>
-                    <select
-                      value={selectedRes || ""}
-                      onChange={(e) => setSelectedRes(e.target.value ? Number(e.target.value) : null)}
-                      className="w-full p-3 bg-background border-2 border-border rounded-2xl text-sm font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all"
-                    >
-                      <option value="">-- แสดงทุกร้านใน{locations.find(l => l.location_id === selectedLoc)?.location_name} --</option>
-                      {restaurants
-                        .filter(r => r.location_id === selectedLoc) // 🌟 กรองร้านที่อยู่ในโรงนั้นๆ
-                        .map(r => (
-                          <option key={r.restaurant_id} value={r.restaurant_id}>{r.restaurant_name}</option>
-                        ))
-                      }
-                    </select>
+                    ทั้งหมด
+                  </button>
+                  {locations
+                    .filter(loc => !loc.location_name.includes("โรงเย็น") && !loc.location_name.includes("โรงร้อน"))
+                    .map(loc => (
+                      <button
+                        key={loc.location_id}
+                        onClick={() => {
+                          setSelectedLoc(loc.location_id);
+                          setSelectedRes(null); // สถานที่อื่นไม่มีร้านอาหารให้เลือก
+                        }}
+                        className={`px-5 py-2 rounded-xl text-xs font-bold transition-all border-2 ${
+                          selectedLoc === loc.location_id
+                            ? "bg-slate-800 text-white border-slate-800 shadow-md"
+                            : "bg-background text-muted-foreground border-border hover:border-slate-400"
+                        }`}
+                      >
+                        {loc.location_name}
+                      </button>
+                    ))}
+                </div>
+              </div>
+        
+              {/* 3. Dropdown ร้านอาหาร (แสดงเฉพาะเมื่อเลือกโรงเย็นหรือโรงร้อน) */}
+              <AnimatePresence>
+                {selectedLoc && locations.find(l => l.location_id === selectedLoc)?.location_name.match(/โรงเย็น|โรงร้อน/) && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }} 
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="pt-2 border-t border-border/50"
+                  >
+                    <div className="space-y-3">
+                      <Label className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">เลือกร้านอาหารในสถานที่</Label>
+                      <select
+                        value={selectedRes || ""}
+                        onChange={(e) => setSelectedRes(e.target.value ? Number(e.target.value) : null)}
+                        className="w-full p-3.5 bg-accent/50 border-2 border-transparent rounded-2xl text-sm font-bold focus:bg-background focus:border-primary focus:outline-none transition-all cursor-pointer"
+                      >
+                        <option value="">-- แสดงทุกร้าน --</option>
+                        {restaurants
+                          .filter(r => r.location_id === selectedLoc)
+                          .map(r => (
+                            <option key={r.restaurant_id} value={r.restaurant_id}>{r.restaurant_name}</option>
+                          ))
+                        }
+                      </select>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
         
-            {/* ส่วนแสดงรายการอาหาร */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* ส่วนแสดงรายการอาหาร (Grid Cards) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {foods.map(food => (
-                <div key={food.food_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center hover:border-primary/30 transition-all group">
-                  <div className="relative">
-                    <img 
-                      src={food.food_image ? `/foods/${food.food_image}` : "/foods/default-food.png"} 
-                      className="w-16 h-16 rounded-2xl object-cover bg-accent group-hover:scale-105 transition-transform" 
-                      onError={(e) => { (e.target as HTMLImageElement).src = "/foods/default-food.png" }}
-                      alt="" 
-                    />
-                  </div>
+                <div key={food.food_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center hover:border-primary/30 transition-all group relative overflow-hidden">
+                  <img 
+                    src={food.food_image ? `/foods/${food.food_image}` : "/foods/default-food.png"} 
+                    className="w-16 h-16 rounded-2xl object-cover bg-accent group-hover:scale-110 transition-transform duration-300" 
+                    onError={(e) => { (e.target as HTMLImageElement).src = "/foods/default-food.png" }}
+                    alt="" 
+                  />
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate">{food.food_name}</p>
-                    <p className="text-xs text-primary font-bold">{food.sodium_mg} <span className="text-[10px] text-muted-foreground font-normal">mg</span></p>
-                    <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> {food.location_name} • {food.restaurant_name || 'ทั่วไป'}
-                    </p>
+                    <p className="font-bold text-sm truncate pr-14">{food.food_name}</p>
+                    <p className="text-xs text-primary font-black tracking-tight">{food.sodium_mg} <span className="text-[9px] text-muted-foreground font-medium uppercase">mg sodium</span></p>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="px-2 py-0.5 rounded-md bg-accent text-[9px] font-bold text-muted-foreground">{food.location_name}</span>
+                      {food.restaurant_name && <span className="text-[9px] text-primary/60 font-bold">• {food.restaurant_name}</span>}
+                    </div>
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => openFoodEdit(food)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"><Edit2 className="w-4 h-4" /></button>
-                    <button onClick={() => setDeleteDialog({ open: true, type: "food", id: food.food_id, name: food.food_name })} className="p-2 text-destructive hover:bg-destructive/5 rounded-xl transition-colors"><Trash2 className="w-4 h-4" /></button>
+                  
+                  {/* ปุ่ม Action แบบลอย */}
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => openFoodEdit(food)} className="p-1.5 bg-white/90 shadow-sm text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><Edit2 className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => setDeleteDialog({ open: true, type: "food", id: food.food_id, name: food.food_name })} className="p-1.5 bg-white/90 shadow-sm text-destructive rounded-lg hover:bg-destructive hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
               ))}
-        
-              {/* กรณีไม่มีข้อมูล */}
-              {selectedLoc && foods.length === 0 && (
-                <div className="text-center py-16 col-span-full bg-accent/5 rounded-3xl border-2 border-dashed border-border/50">
-                  <UtensilsCrossed className="w-10 h-10 mx-auto text-muted-foreground/20 mb-3" />
-                  <p className="text-muted-foreground text-sm">ไม่พบเมนูอาหารในส่วนที่เลือก</p>
-                </div>
-              )}
-              
-              {!selectedLoc && (
-                <div className="text-center py-16 col-span-full">
-                  <p className="text-muted-foreground text-sm italic">กรุณาเลือกสถานที่ด้านบนเพื่อดูรายการอาหาร</p>
-                </div>
-              )}
             </div>
+        
+            {/* กรณีไม่มีข้อมูล */}
+            {foods.length === 0 && (
+              <div className="text-center py-20 bg-accent/5 rounded-[2rem] border-2 border-dashed border-border/50">
+                <UtensilsCrossed className="w-12 h-12 mx-auto text-muted-foreground/20 mb-4" />
+                <p className="text-muted-foreground font-medium text-sm">ไม่พบเมนูอาหารในหมวดหมู่นี้</p>
+              </div>
+            )}
           </motion.div>
         )}
 
