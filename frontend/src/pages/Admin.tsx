@@ -481,38 +481,35 @@ const refreshData = () => {
               <div className="space-y-3">
                 <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">เลือกสถานที่บันทึกอาหาร</Label>
                 <div className="flex flex-wrap gap-2">
-                  {/* ปุ่มทั้งหมด */}
+                  {/* ปุ่มทั้งหมด (เปลี่ยนจาก Slate เป็น Primary) */}
                   <button
                     onClick={() => { setSelectedLoc(null); setSelectedRes(null); }}
                     className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all border-2 ${
                       selectedLoc === null 
-                        ? "bg-primary text-white border-primary shadow-lg" : "bg-slate-800 text-white border-slate-800 shadow-md" 
+                        ? "bg-primary text-white border-primary shadow-lg scale-[1.02]" 
                         : "bg-background text-muted-foreground border-border hover:border-primary/30"
                     }`}
                   >
                     ทั้งหมด
                   </button>
-        
-                  {/* วนลูปแสดงสถานที่ทุกแห่งในแถวเดียวกัน */}
-                  {locations.map(loc => {
-                    const isMainCanteen = loc.location_name.match(/โรงเย็น|โรงร้อน/);
-                    return (
-                      <button
-                        key={loc.location_id}
-                        onClick={() => {
-                          setSelectedLoc(loc.location_id);
-                          setSelectedRes(null);
-                        }}
-                        className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all border-2 ${
-                          selectedLoc === loc.location_id
-                            ? (isMainCanteen ? "bg-primary text-white border-primary shadow-lg" : "bg-slate-800 text-white border-slate-800 shadow-md")
-                            : "bg-background text-muted-foreground border-border hover:border-primary/30"
-                        }`}
-                      >
-                        {loc.location_name}
-                      </button>
-                    );
-                  })}
+              
+                  {/* ปุ่มสถานที่ต่างๆ (เปลี่ยนให้เป็น Primary ทั้งหมดเมื่อเลือก) */}
+                  {locations.map(loc => (
+                    <button
+                      key={loc.location_id}
+                      onClick={() => {
+                        setSelectedLoc(loc.location_id);
+                        setSelectedRes(null);
+                      }}
+                      className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all border-2 ${
+                        selectedLoc === loc.location_id
+                          ? "bg-primary text-white border-primary shadow-lg scale-[1.02]"
+                          : "bg-background text-muted-foreground border-border hover:border-primary/30"
+                      }`}
+                    >
+                      {loc.location_name}
+                    </button>
+                  ))}
                 </div>
               </div>
         
