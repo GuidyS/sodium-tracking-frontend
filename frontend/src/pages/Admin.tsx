@@ -486,8 +486,8 @@ const refreshData = () => {
                     onClick={() => { setSelectedLoc(null); setSelectedRes(null); }}
                     className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all border-2 ${
                       selectedLoc === null 
-                        ? "bg-slate-800 text-white border-slate-800 shadow-md" 
-                        : "bg-background text-muted-foreground border-border hover:border-slate-400"
+                        ? "bg-primary text-white border-primary shadow-lg" : "bg-slate-800 text-white border-slate-800 shadow-md" 
+                        : "bg-background text-muted-foreground border-border hover:border-primary/30"
                     }`}
                   >
                     ทั้งหมด
