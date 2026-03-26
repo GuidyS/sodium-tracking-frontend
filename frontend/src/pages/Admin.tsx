@@ -218,6 +218,39 @@ const handleSave = async () => {
   const genderColors = ["hsl(200, 70%, 50%)", "hsl(330, 70%, 60%)", "hsl(45, 90%, 55%)", "hsl(0, 0%, 70%)"];
   const ageColors = ["hsl(155, 55%, 40%)", "hsl(155, 45%, 55%)", "hsl(40, 80%, 55%)", "hsl(25, 90%, 55%)"];
 
+  // 🌟 1. เพิ่มฟังก์ชันจัดการหน้าต่างแก้ไข/เพิ่มอาหาร (ที่ขาดไป)
+const openFoodCreate = () => {
+  setEditMode('food');
+  setFormData({});      // ล้างข้อมูลฟอร์ม
+  setSelectedFile(null); // ล้างไฟล์ที่เลือกค้างไว้
+  setDialogOpen(true);
+};
+
+const openFoodEdit = (food: any) => {
+  setEditMode('food');
+  setFormData(food);     // นำข้อมูลอาหารที่เลือกใส่ฟอร์ม
+  setSelectedFile(null);
+  setDialogOpen(true);
+};
+
+// 🌟 2. ปรับปรุง refreshData ให้โหลด Lookup Data สำหรับ Filter ด้วย
+const refreshData = () => {
+  if (activeTab === "dashboard") fetchSummary();
+  
+  if (activeTab === "foods") {
+    fetchFoods();                        // โหลดอาหารตาม Filter
+    fetchData("locations", setLocations);   // โหลดสถานที่มาทำ Chips
+    fetchData("restaurants", setRestaurants); // โหลดร้านอาหารมาทำ Dropdown
+  }
+  
+  if (activeTab === "locations") { 
+    fetchData("locations", setLocations); 
+    fetchData("restaurants", setRestaurants); 
+  }
+  if (activeTab === "herbs") fetchData("herbs", setHerbs);
+  if (activeTab === "users") fetchData("users", setUsersList);
+};
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header & Tabs */}
