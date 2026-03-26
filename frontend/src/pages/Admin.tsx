@@ -228,6 +228,7 @@ const AdminDashboard = () => {
         data.append('location_id', formData.location_id);
         data.append('has_restaurant', String(hasRes));
         data.append('restaurant_id', formData.restaurant_id || 0);
+        data.append('description', formData.description || '');
         if (selectedFile) data.append('food_image', selectedFile);
       } 
       else if (table === 'herbs') {
