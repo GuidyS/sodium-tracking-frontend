@@ -477,38 +477,14 @@ const refreshData = () => {
             </div>
         
             <div className="glass-card p-6 rounded-3xl space-y-6 border-2 border-primary/5 shadow-sm">
-              {/* 1. ส่วนเลือกสถานที่หลัก (โรงเย็น / โรงร้อน) */}
+              {/* 🌟 รวมแถวสถานที่ให้เป็นแถวเดียวตามรูปดราฟ */}
               <div className="space-y-3">
-                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">โรงอาหารหลัก</Label>
-                <div className="flex gap-3">
-                  {locations
-                    .filter(loc => loc.location_name.includes("โรงเย็น") || loc.location_name.includes("โรงร้อน"))
-                    .map(loc => (
-                      <button
-                        key={loc.location_id}
-                        onClick={() => {
-                          setSelectedLoc(loc.location_id);
-                          setSelectedRes(null);
-                        }}
-                        className={`flex-1 py-3.5 rounded-2xl text-sm font-bold transition-all border-2 ${
-                          selectedLoc === loc.location_id
-                            ? "bg-primary text-white border-primary shadow-lg scale-[1.02]"
-                            : "bg-background text-muted-foreground border-border hover:border-primary/30"
-                        }`}
-                      >
-                        {loc.location_name}
-                      </button>
-                    ))}
-                </div>
-              </div>
-        
-              {/* 2. ส่วนเลือกสถานที่อื่นๆ (ไม่มี Dropdown) */}
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">สถานที่อื่นๆ</Label>
+                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">เลือกสถานที่บันทึกอาหาร</Label>
                 <div className="flex flex-wrap gap-2">
+                  {/* ปุ่มทั้งหมด */}
                   <button
                     onClick={() => { setSelectedLoc(null); setSelectedRes(null); }}
-                    className={`px-5 py-2 rounded-xl text-xs font-bold transition-all border-2 ${
+                    className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all border-2 ${
                       selectedLoc === null 
                         ? "bg-slate-800 text-white border-slate-800 shadow-md" 
                         : "bg-background text-muted-foreground border-border hover:border-slate-400"
@@ -516,28 +492,31 @@ const refreshData = () => {
                   >
                     ทั้งหมด
                   </button>
-                  {locations
-                    .filter(loc => !loc.location_name.includes("โรงเย็น") && !loc.location_name.includes("โรงร้อน"))
-                    .map(loc => (
+        
+                  {/* วนลูปแสดงสถานที่ทุกแห่งในแถวเดียวกัน */}
+                  {locations.map(loc => {
+                    const isMainCanteen = loc.location_name.match(/โรงเย็น|โรงร้อน/);
+                    return (
                       <button
                         key={loc.location_id}
                         onClick={() => {
                           setSelectedLoc(loc.location_id);
-                          setSelectedRes(null); // สถานที่อื่นไม่มีร้านอาหารให้เลือก
+                          setSelectedRes(null);
                         }}
-                        className={`px-5 py-2 rounded-xl text-xs font-bold transition-all border-2 ${
+                        className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all border-2 ${
                           selectedLoc === loc.location_id
-                            ? "bg-slate-800 text-white border-slate-800 shadow-md"
-                            : "bg-background text-muted-foreground border-border hover:border-slate-400"
+                            ? (isMainCanteen ? "bg-primary text-white border-primary shadow-lg" : "bg-slate-800 text-white border-slate-800 shadow-md")
+                            : "bg-background text-muted-foreground border-border hover:border-primary/30"
                         }`}
                       >
                         {loc.location_name}
                       </button>
-                    ))}
+                    );
+                  })}
                 </div>
               </div>
         
-              {/* 3. Dropdown ร้านอาหาร (แสดงเฉพาะเมื่อเลือกโรงเย็นหรือโรงร้อน) */}
+              {/* 3. Dropdown ร้านอาหาร (แสดงเฉพาะเมื่อเลือก โรงเย็น หรือ โรงร้อน) */}
               <AnimatePresence>
                 {selectedLoc && locations.find(l => l.location_id === selectedLoc)?.location_name.match(/โรงเย็น|โรงร้อน/) && (
                   <motion.div 
@@ -567,7 +546,7 @@ const refreshData = () => {
               </AnimatePresence>
             </div>
         
-            {/* ส่วนแสดงรายการอาหาร (Grid Cards) */}
+            {/* ส่วนแสดงรายการอาหาร (Grid Cards เหมือนเดิม) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {foods.map(food => (
                 <div key={food.food_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center hover:border-primary/30 transition-all group relative overflow-hidden">
@@ -579,14 +558,12 @@ const refreshData = () => {
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm truncate pr-14">{food.food_name}</p>
-                    <p className="text-xs text-primary font-black tracking-tight">{food.sodium_mg} <span className="text-[9px] text-muted-foreground font-medium uppercase">mg sodium</span></p>
+                    <p className="text-xs text-primary font-black tracking-tight">{food.sodium_mg} <span className="text-[9px] text-muted-foreground font-medium uppercase">mg</span></p>
                     <div className="flex items-center gap-1.5 mt-1.5">
                       <span className="px-2 py-0.5 rounded-md bg-accent text-[9px] font-bold text-muted-foreground">{food.location_name}</span>
                       {food.restaurant_name && <span className="text-[9px] text-primary/60 font-bold">• {food.restaurant_name}</span>}
                     </div>
                   </div>
-                  
-                  {/* ปุ่ม Action แบบลอย */}
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => openFoodEdit(food)} className="p-1.5 bg-white/90 shadow-sm text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><Edit2 className="w-3.5 h-3.5" /></button>
                     <button onClick={() => setDeleteDialog({ open: true, type: "food", id: food.food_id, name: food.food_name })} className="p-1.5 bg-white/90 shadow-sm text-destructive rounded-lg hover:bg-destructive hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -594,14 +571,6 @@ const refreshData = () => {
                 </div>
               ))}
             </div>
-        
-            {/* กรณีไม่มีข้อมูล */}
-            {foods.length === 0 && (
-              <div className="text-center py-20 bg-accent/5 rounded-[2rem] border-2 border-dashed border-border/50">
-                <UtensilsCrossed className="w-12 h-12 mx-auto text-muted-foreground/20 mb-4" />
-                <p className="text-muted-foreground font-medium text-sm">ไม่พบเมนูอาหารในหมวดหมู่นี้</p>
-              </div>
-            )}
           </motion.div>
         )}
 
