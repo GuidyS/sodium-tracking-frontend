@@ -80,6 +80,8 @@ const AdminDashboard = () => {
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [herbs, setHerbs] = useState<any[]>([]);
   const [usersList, setUsersList] = useState<UserInfo[]>([]);
+  const [selectedLoc, setSelectedLoc] = useState<number | null>(null);
+  const [selectedRes, setSelectedRes] = useState<number | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState<"food" | "location" | "restaurant" | "herb" | "user" | null>(null);
@@ -89,7 +91,14 @@ const AdminDashboard = () => {
   // ===== Effects =====
   useEffect(() => {
     if (activeTab === "dashboard") fetchSummary();
-    if (activeTab === "foods") fetchFoods();
+    
+    // 🌟 เพิ่ม: โหลดข้อมูลที่ต้องใช้เป็น Filter ในหน้าจัดการอาหารด้วย
+    if (activeTab === "foods") {
+      fetchFoods();       // โหลดรายการอาหาร
+      fetchLocations();   // โหลดชื่อสถานที่มาทำ Chips
+      fetchRestaurants(); // โหลดชื่อร้านอาหารมาทำ Dropdown
+    }
+    
     if (activeTab === "locations") { fetchLocations(); fetchRestaurants(); }
     if (activeTab === "herbs") fetchHerbs();
     if (activeTab === "users") fetchUsers();
@@ -132,8 +141,16 @@ const AdminDashboard = () => {
   };
 
   const fetchFoods = async () => {
-    const res = await api.get(`/index.php?page=admin&table=foods&user_id=${adminId}`);
-    if (res.data.status === "success") setFoods(res.data.data);
+    try {
+      let url = `/index.php?page=admin&table=foods&user_id=${adminId}`;
+      if (selectedLoc) url += `&location_id=${selectedLoc}`;
+      if (selectedRes) url += `&restaurant_id=${selectedRes}`;
+      
+      const res = await api.get(url);
+      if (res.data.status === "success") setFoods(res.data.data || []);
+    } catch { 
+      toast({ title: "โหลดข้อมูลอาหารไม่สำเร็จ", variant: "destructive" }); 
+    }
   };
 
   const fetchLocations = async () => {
@@ -393,31 +410,82 @@ const handleSave = async () => {
 
         {/* ==================== TAB จัดการอาหาร ==================== */}
         {activeTab === "foods" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-bold">รายการอาหาร ({foods.length})</h2>
-              <Button onClick={() => { setEditMode('food'); setFormData({}); setDialogOpen(true); }}>
-                <Plus className="w-4 h-4 mr-2" /> เพิ่มอาหาร
+              <h2 className="text-lg font-bold text-foreground">รายการอาหาร ({foods.length})</h2>
+              <Button onClick={openFoodCreate} className="gap-2 bg-primary hover:bg-primary/90">
+                <Plus className="w-4 h-4" />เพิ่มอาหาร
               </Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {foods.map((food) => (
-                <div key={food.food_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center">
-                  <img src={`/foods/${food.food_image}`} className="w-14 h-14 rounded-xl object-cover" />
-                  <div className="flex-1">
-                    <p className="text-sm font-bold">{food.food_name}</p>
-                    <p className="text-xs text-muted-foreground">{food.sodium_mg} mg</p>
+        
+            {/* 🌟 ส่วนเลือกสถานที่ (เหมือนรูปที่ 2) */}
+            <div className="space-y-4">
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                <button
+                  onClick={() => { setSelectedLoc(null); setSelectedRes(null); }}
+                  className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border ${
+                    selectedLoc === null ? "bg-primary text-white border-primary shadow-md" : "bg-card text-muted-foreground border-border hover:border-primary/50"
+                  }`}
+                >
+                  ทั้งหมด
+                </button>
+                {locations.map(loc => (
+                  <button
+                    key={loc.location_id}
+                    onClick={() => { setSelectedLoc(loc.location_id); setSelectedRes(null); }}
+                    className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border ${
+                      selectedLoc === loc.location_id ? "bg-primary text-white border-primary shadow-md" : "bg-card text-muted-foreground border-border hover:border-primary/50"
+                    }`}
+                  >
+                    {loc.location_name}
+                  </button>
+                ))}
+              </div>
+        
+              {/* 🌟 ส่วนเลือกร้านอาหาร (Dropdown) */}
+              <div className="max-w-xs">
+                <select 
+                  value={selectedRes || ""} 
+                  onChange={(e) => setSelectedRes(e.target.value ? Number(e.target.value) : null)}
+                  className="w-full p-2.5 bg-card border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                >
+                  <option value="">-- เลือกร้านอาหารทั้งหมด --</option>
+                  {restaurants
+                    // (ทางเลือก) กรองเฉพาะร้านที่มีในสถานที่นั้นๆ ถ้าฐานข้อมูลคุณมีฟิลด์เชื่อมกัน
+                    .map(r => (
+                      <option key={r.restaurant_id} value={r.restaurant_id}>{r.restaurant_name}</option>
+                    ))
+                  }
+                </select>
+              </div>
+            </div>
+        
+            {/* รายการอาหารแสดงผลตามรูปที่ 1 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              {foods.map(food => (
+                <div key={food.food_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center hover:shadow-lg transition-shadow">
+                  <img 
+                    src={food.food_image ? `/foods/${food.food_image}` : "/placeholder.svg"} 
+                    className="w-16 h-16 rounded-xl object-cover bg-accent border border-border/50" 
+                    alt={food.food_name} 
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-foreground truncate">{food.food_name}</p>
+                    <p className="text-xs text-muted-foreground font-medium">{food.sodium_mg} mg</p>
+                    <p className="text-[10px] text-primary/70 mt-0.5">{food.location_name} • {food.restaurant_name || 'ทั่วไป'}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => { setEditMode('food'); setFormData(food); setDialogOpen(true); }}>
-                      <Edit2 className="w-4 h-4 text-blue-500" />
-                    </button>
-                    <button onClick={() => setDeleteDialog({ open: true, table: "foods", id: food.food_id, name: food.food_name })}>
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </button>
+                  <div className="flex gap-1">
+                    <button onClick={() => openFoodEdit(food)} className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
+                    <button onClick={() => setDeleteDialog({ open: true, type: "food", id: food.food_id, name: food.food_name })} className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
               ))}
+              {foods.length === 0 && (
+                <div className="text-center py-20 col-span-full bg-accent/10 rounded-3xl border-2 border-dashed border-border">
+                  <UtensilsCrossed className="w-10 h-10 mx-auto text-muted-foreground/30 mb-3" />
+                  <p className="text-muted-foreground text-sm">ไม่พบรายการอาหารในหมวดหมู่นี้</p>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
