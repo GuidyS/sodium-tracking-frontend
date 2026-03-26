@@ -82,6 +82,7 @@ const AdminDashboard = () => {
   const [usersList, setUsersList] = useState<UserInfo[]>([]);
   const [selectedLoc, setSelectedLoc] = useState<number | null>(null);
   const [selectedRes, setSelectedRes] = useState<number | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState<"food" | "location" | "restaurant" | "herb" | "user" | null>(null);
@@ -104,7 +105,22 @@ const AdminDashboard = () => {
     if (activeTab === "users") fetchUsers();
   }, [activeTab, dateRange]);
 
+  useEffect(() => {
+    if (activeTab === "foods") fetchFoods();
+  }, [selectedLoc, selectedRes]);
+
   // ===== API Calls (เชื่อมกับ admin.php ของคุณ) =====
+  const fetchData = async (table: string, setter: Function) => {
+    try {
+      const res = await api.get(`/index.php?page=admin&table=${table}&action=list&user_id=${adminId}`);
+      if (res.data.status === "success") {
+        setter(res.data.data);
+      }
+    } catch (e) { 
+      console.error(`Error fetching ${table}:`, e); 
+    }
+  };
+  
   const fetchSummary = async () => {
     try {
       const res = await api.get(`/index.php?page=admin&action=summary&user_id=${adminId}&range=${dateRange}`);
@@ -185,7 +201,7 @@ const AdminDashboard = () => {
   // ===== Generic Handle Save & Delete =====
 const handleSave = async () => {
     const action = formData.id || formData.user_id || formData.food_id || formData.herb_id || formData.location_id ? 'update' : 'create';
-    const table = editMode === 'food' ? 'foods' : editMode === 'location' ? 'locations' : editMode === 'herb' ? 'herbs' : 'users';
+    const table = editMode === 'food' ? 'foods' : editMode === 'location' ? 'locations' : editMode === 'restaurant' ? 'restaurants' : editMode === 'herb' ? 'herbs' : 'users';
     
     // ดึง ID ที่ถูกต้องตามตาราง
     const id = formData.food_id || formData.herb_id || formData.location_id || formData.user_id || formData.id;
@@ -635,6 +651,10 @@ const refreshData = () => {
                   <div><Label>อายุ</Label><Input type="number" value={formData.age || ''} onChange={e => setFormData({...formData, age: e.target.value})} /></div>
                 </div>
                 <div><Label>แต้มสะสม</Label><Input type="number" value={formData.total_points || ''} onChange={e => setFormData({...formData, total_points: e.target.value})} /></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><Label>Pre-test Score</Label><Input type="number" value={formData.pretest_score || ''} onChange={e => setFormData({...formData, pretest_score: e.target.value})} /></div>
+                  <div><Label>Post-test Score</Label><Input type="number" value={formData.posttest_score || ''} onChange={e => setFormData({...formData, posttest_score: e.target.value})} /></div>
+                </div>
               </>
             )}
           </div>
