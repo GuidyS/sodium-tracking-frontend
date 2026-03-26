@@ -742,9 +742,13 @@ const refreshData = () => {
                       >
                         <option value="">-- เลือกร้านอาหาร --</option>
                         {restaurants
-                          .filter(r => r.location_id === Number(formData.location_id)) // กรองเฉพาะร้านในโรงที่เลือก
-                          .map(res => (
-                            <option key={res.restaurant_id} value={res.restaurant_id}>{res.restaurant_name}</option>
+                          .filter(r => {
+                            // 🔍 ลองใส่ console.log เพื่อเช็คข้อมูลว่ามาจริงไหม
+                            // console.log("Restaurant Data:", r); 
+                            return Number(r.location_id) === Number(selectedLoc); // 🌟 แปลงเป็น Number ทั้งคู่ก่อนเทียบ
+                          })
+                          .map(r => (
+                            <option key={r.restaurant_id} value={r.restaurant_id}>{r.restaurant_name}</option>
                           ))
                         }
                       </select>
