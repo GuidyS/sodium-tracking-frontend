@@ -514,7 +514,7 @@ const refreshData = () => {
             <div className="glass-card p-6 rounded-3xl space-y-6 border-2 border-primary/5 shadow-sm">
               {/* 🌟 รวมแถวสถานที่ให้เป็นแถวเดียวตามรูปดราฟ */}
               <div className="space-y-3">
-                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">เลือกสถานที่บันทึกอาหาร</Label>
+                <Label className="text-[16px] font-black text-muted-foreground uppercase tracking-[0.2em]">เลือกสถานที่บันทึกอาหาร</Label>
                 <div className="flex flex-wrap gap-2">
                   {/* ปุ่มทั้งหมด (เปลี่ยนจาก Slate เป็น Primary) */}
                   <button
@@ -555,10 +555,10 @@ const refreshData = () => {
                     initial={{ opacity: 0, y: -10 }} 
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="pt-2 border-t border-border/50"
+                    className="pt-6 border-t border-border/50 flex flex-col space-y-4"
                   >
                     <div className="space-y-3">
-                      <Label className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">เลือกร้านอาหารในสถานที่</Label>
+                      <Label className="text-[16px] font-black text-primary uppercase tracking-[0.2em]">เลือกร้านอาหารในสถานที่</Label>
                       <select
                         value={selectedRes || ""}
                         onChange={(e) => setSelectedRes(e.target.value ? Number(e.target.value) : null)}
