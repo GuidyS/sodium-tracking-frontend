@@ -562,11 +562,14 @@ const refreshData = () => {
                       <select
                         value={selectedRes || ""}
                         onChange={(e) => setSelectedRes(e.target.value ? Number(e.target.value) : null)}
-                        className="w-full p-3.5 bg-accent/50 border-2 border-transparent rounded-2xl text-sm font-bold focus:bg-background focus:border-primary focus:outline-none transition-all cursor-pointer"
+                        className="..."
                       >
                         <option value="">-- แสดงทุกร้าน --</option>
                         {restaurants
-                          .filter(r => Number(r.location_id) === Number(selectedLoc)) // 🌟 ใช้ Number() ครอบทั้งสองฝั่ง
+                          .filter(r => {
+                            // 🌟 ใช้ Number() ครอบทั้งสองฝั่งเพื่อให้มั่นใจว่าประเภทข้อมูลตรงกัน
+                            return Number(r.location_id) === Number(selectedLoc); 
+                          })
                           .map(r => (
                             <option key={r.restaurant_id} value={r.restaurant_id}>{r.restaurant_name}</option>
                           ))
