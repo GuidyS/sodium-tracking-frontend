@@ -79,6 +79,7 @@ const AdminDashboard = () => {
   const [userSodiumData, setUserSodiumData] = useState<any[]>([]);
   const [userScoreData, setUserScoreData] = useState<any[]>([]);
   const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d" | "all" | "custom">("30d");
+  const [isShopOpen, setIsShopOpen] = useState(false);
 
   // ===== CRUD States (Forms & Dialogs) =====
   const [foods, setFoods] = useState<FoodItem[]>([]);
@@ -550,31 +551,70 @@ const refreshData = () => {
         
               {/* 3. Dropdown ร้านอาหาร (แสดงเฉพาะเมื่อเลือก โรงเย็น หรือ โรงร้อน) */}
               <AnimatePresence>
-                {selectedLoc && locations.find(l => l.location_id === selectedLoc)?.location_name.match(/โรงเย็น|โรงร้อน/) && (
+                {selectedLoc && locations.find(l => l.location_id === Number(selectedLoc))?.location_name.match(/โรงเย็น|โรงร้อน/) && (
                   <motion.div 
                     initial={{ opacity: 0, y: -10 }} 
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     className="pt-6 border-t border-border/50 flex flex-col space-y-4"
                   >
-                    <div className="space-y-3">
-                      <Label className="text-[16px] font-black text-primary uppercase tracking-[0.2em]">เลือกร้านอาหารในสถานที่</Label>
-                      <select
-                        value={selectedRes || ""}
-                        onChange={(e) => setSelectedRes(e.target.value ? Number(e.target.value) : null)}
-                        className="..."
+                    {/* ขยายขนาดตัวหนังสือตามเส้นสีแดง */}
+                    <Label className="text-sm font-bold text-primary uppercase tracking-wide">
+                      เลือกร้านอาหารในสถานที่
+                    </Label>
+              
+                    {/* 🌟 Custom Dropdown Container */}
+                    <div className="relative w-full">
+                      <button
+                        onClick={() => setIsShopOpen(!isShopOpen)}
+                        className="flex w-full items-center justify-between rounded-2xl border border-border bg-card/50 p-4 text-sm font-medium transition-all hover:bg-card/80"
                       >
-                        <option value="">-- แสดงทุกร้าน --</option>
-                        {restaurants
-                          .filter(r => {
-                            // 🌟 ใช้ Number() ครอบทั้งสองฝั่งเพื่อให้มั่นใจว่าประเภทข้อมูลตรงกัน
-                            return Number(r.location_id) === Number(selectedLoc); 
-                          })
-                          .map(r => (
-                            <option key={r.restaurant_id} value={r.restaurant_id}>{r.restaurant_name}</option>
-                          ))
-                        }
-                      </select>
+                        <div className="flex items-center gap-2">
+                          {selectedRes 
+                            ? restaurants.find(r => Number(r.restaurant_id) === Number(selectedRes))?.restaurant_name 
+                            : "-- แสดงทุกร้าน --"}
+                        </div>
+                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${isShopOpen ? "rotate-180" : ""}`} />
+                      </button>
+              
+                      {/* รายการร้านค้าที่จะแสดงเมื่อกดปุ่ม */}
+                      <AnimatePresence>
+                        {isShopOpen && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: -10 }} 
+                            animate={{ opacity: 1, y: 0 }} 
+                            exit={{ opacity: 0, y: -10 }} 
+                            className="absolute z-50 mt-2 w-full rounded-2xl border border-border bg-card shadow-xl overflow-hidden"
+                          >
+                            <div className="max-h-60 overflow-y-auto p-1">
+                              <button 
+                                onClick={() => { setSelectedRes(null); setIsShopOpen(false); }}
+                                className="flex w-full px-4 py-3 text-sm hover:bg-primary/10 transition-colors border-b border-border/50"
+                              >
+                                -- แสดงทุกร้าน --
+                              </button>
+                              {restaurants
+                                .filter(r => Number(r.location_id) === Number(selectedLoc))
+                                .map((res) => (
+                                  <button 
+                                    key={res.restaurant_id} 
+                                    onClick={() => { 
+                                      setSelectedRes(res.restaurant_id); 
+                                      setIsShopOpen(false); 
+                                    }} 
+                                    className={`flex w-full px-4 py-3 text-sm transition-colors ${
+                                      Number(selectedRes) === Number(res.restaurant_id) 
+                                      ? "bg-primary text-white" 
+                                      : "hover:bg-primary/10"
+                                    }`}
+                                  >
+                                    {res.restaurant_name}
+                                  </button>
+                                ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </motion.div>
                 )}
