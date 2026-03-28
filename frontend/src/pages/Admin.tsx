@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, FileText, CheckCircle, Search, Trash2, X, User,
-  CalendarDays, Filter, Plus, Edit2, LogOut, Pill, MapPin, UtensilsCrossed, ImageIcon, ChevronDown
+  CalendarDays, Filter, Plus, Edit2, LogOut, Pill, MapPin, UtensilsCrossed, Image as ImageIcon, ChevronDown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/axios";
@@ -90,6 +90,7 @@ const AdminDashboard = () => {
   const [selectedLoc, setSelectedLoc] = useState<number | null>(null);
   const [selectedRes, setSelectedRes] = useState<number | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [expandedLocId, setExpandedLocId] = useState<number | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState<"food" | "location" | "restaurant" | "herb" | "user" | null>(null);
@@ -213,12 +214,14 @@ const AdminDashboard = () => {
       return;
     }
   
-    const action = (formData.food_id || formData.herb_id || formData.user_id || formData.id) ? 'update' : 'create';
-    const table = editMode === 'food' ? 'foods' : 
+  const action = (formData.food_id || formData.herb_id || formData.user_id || formData.location_id || formData.restaurant_id || formData.id) ? 'update' : 'create';
+  
+  const table = editMode === 'food' ? 'foods' : 
                 editMode === 'herb' ? 'herbs' : 
-                editMode === 'user' ? 'users' : 'locations';
-    
-    const id = formData.food_id || formData.herb_id || formData.user_id || formData.id;
+                editMode === 'user' ? 'users' : 
+                editMode === 'location' ? 'locations' : 'restaurants';
+
+  const id = formData.food_id || formData.herb_id || formData.user_id || formData.location_id || formData.restaurant_id || formData.id;
   
     try {
       const data = new FormData();
@@ -238,6 +241,13 @@ const AdminDashboard = () => {
         data.append('description', formData.description || '');
         if (selectedFile) data.append('food_image', selectedFile);
       } 
+      else if (table === 'locations') {
+        data.append('location_name', formData.location_name);
+      } 
+      else if (table === 'restaurants') {
+        data.append('restaurant_name', formData.restaurant_name);
+        data.append('location_id', formData.location_id);
+      }
       else if (table === 'herbs') {
         data.append('title', formData.title);
         data.append('detail', formData.detail || '');
@@ -650,18 +660,84 @@ const refreshData = () => {
         {/* ==================== TAB สถานที่ ==================== */}
         {activeTab === "locations" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            <div className="glass-card p-5 rounded-2xl">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-sm font-bold flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" />สถานที่บันทึกอาหาร</h2>
-                <Button size="sm" onClick={() => { setEditMode('location'); setFormData({}); setDialogOpen(true); }}><Plus className="w-4 h-4" /></Button>
+            <div className="glass-card p-6 rounded-3xl border-2 border-primary/5 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-sm font-bold flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-primary" /> สถานที่บันทึกอาหาร
+                </h2>
+                <Button size="sm" onClick={() => { setEditMode('location'); setFormData({}); setDialogOpen(true); }}>
+                  <Plus className="w-4 h-4" />
+                </Button>
               </div>
-              <div className="space-y-2">
-                {locations.map(loc => (
-                  <div key={loc.location_id} className="flex justify-between items-center p-3 bg-accent/20 rounded-xl">
-                    <span className="text-sm">{loc.location_name}</span>
-                    <button onClick={() => setDeleteDialog({ open: true, type: "location", id: loc.location_id, name: loc.location_name })} className="text-destructive p-1"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </div>
-                ))}
+        
+              <div className="space-y-3">
+                {locations.map(loc => {
+                  const isMainCanteen = loc.location_name.match(/โรงเย็น|โรงร้อน/);
+                  const isExpanded = expandedLocId === loc.location_id;
+        
+                  return (
+                    <div key={loc.location_id} className="overflow-hidden border border-border/50 rounded-2xl bg-accent/5">
+                      {/* ส่วนหัวของสถานที่ */}
+                      <div className="flex justify-between items-center p-4 bg-white/50">
+                        <div 
+                          className="flex items-center gap-3 cursor-pointer flex-1"
+                          onClick={() => isMainCanteen && setExpandedLocId(isExpanded ? null : loc.location_id)}
+                        >
+                          {isMainCanteen && (
+                            <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          )}
+                          <span className="text-sm font-bold text-foreground">{loc.location_name}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1">
+                          {/* 🌟 เพิ่มปุ่มแก้ไขสถานที่ (หมายเลข 2 ในรูป) */}
+                          <button 
+                            onClick={() => { setEditMode('location'); setFormData(loc); setDialogOpen(true); }}
+                            className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button 
+                            onClick={() => setDeleteDialog({ open: true, table: "locations", id: loc.location_id, name: loc.location_name })} 
+                            className="p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+        
+                      {/* 🌟 ส่วน Dropdown แสดงร้านอาหาร (หมายเลข 1 ในรูป) */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="bg-accent/10 border-t border-border/30">
+                            <div className="p-3 space-y-2">
+                              <div className="flex justify-between items-center px-2 py-1">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase">รายชื่อร้านอาหาร</span>
+                                <button 
+                                  onClick={() => { setEditMode('restaurant'); setFormData({ location_id: loc.location_id }); setDialogOpen(true); }}
+                                  className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline"
+                                >
+                                  <Plus className="w-3 h-3" /> เพิ่มร้าน
+                                </button>
+                              </div>
+                              {restaurants
+                                .filter(r => Number(r.location_id) === Number(loc.location_id))
+                                .map(res => (
+                                  <div key={res.restaurant_id} className="flex justify-between items-center p-3 bg-white rounded-xl border border-border/30 shadow-sm">
+                                    <span className="text-xs font-medium">{res.restaurant_name}</span>
+                                    <div className="flex gap-1">
+                                      <button onClick={() => { setEditMode('restaurant'); setFormData(res); setDialogOpen(true); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3 h-3" /></button>
+                                      <button onClick={() => setDeleteDialog({ open: true, table: "restaurants", id: res.restaurant_id, name: res.restaurant_name })} className="p-1.5 text-destructive hover:bg-destructive/5 rounded-lg"><Trash2 className="w-3 h-3" /></button>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </motion.div>
@@ -811,6 +887,40 @@ const refreshData = () => {
                   {formData.food_image && !selectedFile && (
                     <p className="text-[10px] text-muted-foreground mt-1 px-1">ไฟล์ปัจจุบัน: {formData.food_image}</p>
                   )}
+                </div>
+              </div>
+            )}
+            {editMode === 'location' && (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">ชื่อสถานที่</Label>
+                  <Input 
+                    value={formData.location_name || ''} 
+                    onChange={e => setFormData({...formData, location_name: e.target.value})} 
+                    placeholder="เช่น โรงอาหาร 2"
+                    className="rounded-xl mt-1"
+                  />
+                </div>
+              </div>
+            )}
+            
+            {editMode === 'restaurant' && (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">ชื่อร้านอาหาร</Label>
+                  <Input 
+                    value={formData.restaurant_name || ''} 
+                    onChange={e => setFormData({...formData, restaurant_name: e.target.value})} 
+                    placeholder="เช่น ร้านข้าวมันไก่"
+                    className="rounded-xl mt-1"
+                  />
+                </div>
+                {/* แสดงชื่อสถานที่ที่ร้านนี้สังกัดอยู่เพื่อป้องกันการหลงลืม */}
+                <div className="p-3 bg-accent/20 rounded-xl">
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold">สถานที่บันทึก</p>
+                  <p className="text-sm font-bold text-primary">
+                    {locations.find(l => l.location_id === Number(formData.location_id))?.location_name}
+                  </p>
                 </div>
               </div>
             )}
