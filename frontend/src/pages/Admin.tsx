@@ -680,11 +680,15 @@ const refreshData = () => {
                       {/* ส่วนหัวของสถานที่ */}
                       <div className="flex justify-between items-center p-4 bg-white/50">
                         <div 
-                          className="flex items-center gap-3 cursor-pointer flex-1"
+                          className={`flex items-center gap-3 flex-1 ${isMainCanteen ? 'cursor-pointer' : ''}`}
                           onClick={() => isMainCanteen && setExpandedLocId(isExpanded ? null : loc.location_id)}
                         >
-                          {isMainCanteen && (
+                          {isMainCanteen ? (
+                            // แสดงไอคอน Dropdown สำหรับโรงอาหารหลัก
                             <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          ) : (
+                            // 🌟 เพิ่มช่องว่างขนาด w-4 เพื่อให้ข้อความขยับไปทางขวาเท่ากับตัวที่มีไอคอน
+                            <div className="w-4" /> 
                           )}
                           <span className="text-sm font-bold text-foreground">{loc.location_name}</span>
                         </div>
