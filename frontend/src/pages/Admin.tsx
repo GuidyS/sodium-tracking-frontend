@@ -512,7 +512,7 @@ const refreshData = () => {
               </Button>
             </div>
         
-            <div className="glass-card p-6 rounded-3xl space-y-6 border-2 border-primary/5 shadow-sm">
+            <div className="glass-card p-6 rounded-3xl space-y-6 border-2 border-primary/5 shadow-sm relative z-30">
               {/* 🌟 รวมแถวสถานที่ให้เป็นแถวเดียวตามรูปดราฟ */}
               <div className="space-y-3">
                 <Label className="text-[16px] font-black text-muted-foreground uppercase tracking-[0.2em]">เลือกสถานที่บันทึกอาหาร</Label>
@@ -556,14 +556,12 @@ const refreshData = () => {
                     initial={{ opacity: 0, y: -10 }} 
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="pt-6 border-t border-border/50 flex flex-col space-y-4"
+                    className="pt-6 border-t border-border/50 flex flex-col space-y-4 relative" // 🌟 เพิ่ม relative ตรงนี้
                   >
-                    {/* ขยายขนาดตัวหนังสือตามเส้นสีแดง */}
                     <Label className="text-sm font-bold text-primary uppercase tracking-wide">
                       เลือกร้านอาหารในสถานที่
                     </Label>
-              
-                    {/* 🌟 Custom Dropdown Container */}
+            
                     <div className="relative w-full">
                       <button
                         onClick={() => setIsShopOpen(!isShopOpen)}
@@ -576,20 +574,20 @@ const refreshData = () => {
                         </div>
                         <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${isShopOpen ? "rotate-180" : ""}`} />
                       </button>
-              
-                      {/* รายการร้านค้าที่จะแสดงเมื่อกดปุ่ม */}
+            
                       <AnimatePresence>
                         {isShopOpen && (
                           <motion.div 
                             initial={{ opacity: 0, y: -10 }} 
                             animate={{ opacity: 1, y: 0 }} 
                             exit={{ opacity: 0, y: -10 }} 
-                            className="absolute z-50 mt-2 w-full rounded-2xl border border-border bg-card shadow-xl overflow-hidden"
+                            /* 🌟 2. เพิ่ม z-[100] เพื่อให้มั่นใจว่าอยู่หน้าสุดเหนือทุกอย่าง */
+                            className="absolute left-0 right-0 z-[100] mt-2 rounded-2xl border border-border bg-card shadow-2xl overflow-hidden"
                           >
-                            <div className="max-h-60 overflow-y-auto p-1">
+                            <div className="max-h-60 overflow-y-auto p-1 bg-white"> {/* 🌟 เพิ่ม bg-white ให้ทึบแสงป้องกันโปร่งใสเห็นพื้นหลัง */}
                               <button 
                                 onClick={() => { setSelectedRes(null); setIsShopOpen(false); }}
-                                className="flex w-full px-4 py-3 text-sm hover:bg-primary/10 transition-colors border-b border-border/50"
+                                className="flex w-full px-4 py-3 text-sm hover:bg-primary/10 transition-colors border-b border-border/50 text-left"
                               >
                                 -- แสดงทุกร้าน --
                               </button>
@@ -602,7 +600,7 @@ const refreshData = () => {
                                       setSelectedRes(res.restaurant_id); 
                                       setIsShopOpen(false); 
                                     }} 
-                                    className={`flex w-full px-4 py-3 text-sm transition-colors ${
+                                    className={`flex w-full px-4 py-3 text-sm transition-colors text-left ${
                                       Number(selectedRes) === Number(res.restaurant_id) 
                                       ? "bg-primary text-white" 
                                       : "hover:bg-primary/10"
@@ -622,7 +620,7 @@ const refreshData = () => {
             </div>
         
             {/* ส่วนแสดงรายการอาหาร (Grid Cards เหมือนเดิม) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
               {foods.map(food => (
                 <div key={food.food_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center hover:border-primary/30 transition-all group relative overflow-hidden">
                   <img 
