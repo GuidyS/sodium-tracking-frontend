@@ -515,7 +515,7 @@ const refreshData = () => {
             <div className="glass-card p-6 rounded-3xl space-y-6 border-2 border-primary/5 shadow-sm relative z-30">
               {/* 🌟 รวมแถวสถานที่ให้เป็นแถวเดียวตามรูปดราฟ */}
               <div className="space-y-3">
-                <Label className="text-[16px] font-black text-muted-foreground uppercase tracking-[0.2em]">เลือกสถานที่บันทึกอาหาร</Label>
+                <Label className="text-sm font-black text-muted-foreground uppercase tracking-[0.2em]">เลือกสถานที่บันทึกอาหาร</Label>
                 <div className="flex flex-wrap gap-2">
                   {/* ปุ่มทั้งหมด (เปลี่ยนจาก Slate เป็น Primary) */}
                   <button
@@ -559,7 +559,7 @@ const refreshData = () => {
                     className="pt-6 border-t border-border/50 flex flex-col space-y-4 relative" // 🌟 เพิ่ม relative ตรงนี้
                   >
                     <Label className="text-sm font-bold text-primary uppercase tracking-wide">
-                      เลือกร้านอาหารในสถานที่
+                      เลือกร้านอาหาร
                     </Label>
             
                     <div className="relative w-full">
