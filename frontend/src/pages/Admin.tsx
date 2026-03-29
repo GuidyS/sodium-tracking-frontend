@@ -336,6 +336,28 @@ const refreshData = () => {
   if (activeTab === "users") fetchData("users", setUsersList);
 };
 
+const openEditMedHerb = (item: any, mode: 'medicine' | 'herb') => {
+  setEditMode(mode);
+  let contentObj = { detail: '', warning: '' };
+  
+  try {
+    // ตรวจสอบว่า content เป็น string หรือ object และแปลงให้ถูกต้อง
+    const rawContent = item.content;
+    contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : (rawContent || contentObj);
+  } catch (e) {
+    console.error("Parse error:", e);
+  }
+
+  // 🌟 นำข้อมูลที่แตกแล้วใส่ลงใน formData
+  setFormData({
+    ...item,
+    detail: contentObj.detail || '',
+    warning: contentObj.warning || ''
+  });
+  setSelectedFile(null);
+  setDialogOpen(true);
+};  
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header & Tabs */}
@@ -814,7 +836,7 @@ const refreshData = () => {
                                       <span className="text-xs font-bold text-foreground">{med.title}</span>
                                     </div>
                                     <div className="flex gap-1">
-                                      <button onClick={() => { setEditMode('medicine'); setFormData(med); setDialogOpen(true); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
+                                      <button onClick={() => openEditMedHerb(med, 'medicine')} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
                                       <button onClick={() => setDeleteDialog({ open: true, table: "medicines", id: med.med_id, name: med.title })} className="p-1.5 text-destructive hover:bg-destructive/5 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
                                     </div>
                                   </div>
@@ -842,7 +864,7 @@ const refreshData = () => {
                         <span className="text-sm font-bold text-foreground">{herb.title}</span>
                       </div>
                       <div className="flex gap-1">
-                        <button onClick={() => { setEditMode('herb'); setFormData(herb); setDialogOpen(true); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => openEditMedHerb(herb, 'herb')} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
                         <button onClick={() => setDeleteDialog({ open: true, table: "herbs", id: herb.herb_id, name: herb.title })} className="p-1.5 text-destructive hover:bg-destructive/5 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </div>
@@ -1024,8 +1046,22 @@ const refreshData = () => {
                     </div>
                   )}
                   <div><Label className="text-xs font-bold">ชื่อ{editMode === 'medicine' ? 'ยา' : 'สมุนไพร'}</Label><Input value={formData.title || ''} onChange={e => setFormData({...formData, title: e.target.value})} className="rounded-xl" /></div>
-                  <div><Label className="text-xs font-bold">รายละเอียด</Label><Textarea value={formData.detail || JSON.parse(formData.content || '{}').detail || ''} onChange={e => setFormData({...formData, detail: e.target.value})} className="rounded-xl" /></div>
-                  <div><Label className="text-xs font-bold">คำเตือน/ข้อควรระวัง</Label><Textarea value={formData.warning || JSON.parse(formData.content || '{}').warning || ''} onChange={e => setFormData({...formData, warning: e.target.value})} className="rounded-xl" /></div>
+                    <div>
+                      <Label className="text-xs font-bold">รายละเอียด</Label>
+                      <Textarea 
+                        value={formData.detail || ''} 
+                        onChange={e => setFormData({...formData, detail: e.target.value})} 
+                        className="rounded-xl" 
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-bold">คำเตือน/ข้อควรระวัง</Label>
+                      <Textarea 
+                        value={formData.warning || ''} 
+                        onChange={e => setFormData({...formData, warning: e.target.value})} 
+                        className="rounded-xl" 
+                      />
+                    </div>
                   <div><Label className="text-xs font-bold">รูปภาพ</Label><Input type="file" accept="image/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="rounded-xl" /></div>
                 </div>
               )}
