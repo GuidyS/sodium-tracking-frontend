@@ -214,20 +214,20 @@ const AdminDashboard = () => {
 
   // ===== Generic Handle Save & Delete =====
   const handleSave = async () => {
-  
-  const table = editMode === 'food' ? 'foods' : 
+    // 1. กำหนด Table และ ID ให้ครอบคลุมทุกตาราง
+    const table = editMode === 'food' ? 'foods' : 
                   editMode === 'medicine' ? 'medicines' : 
                   editMode === 'herb' ? 'herbs' : 
                   editMode === 'user' ? 'users' : 
                   editMode === 'location' ? 'locations' : 'restaurants';
-
-  const id = formData.food_id || formData.med_id || formData.herb_id || formData.user_id || formData.location_id || formData.restaurant_id || formData.id;
-  const action = id ? 'update' : 'create';
+  
+    const id = formData.food_id || formData.med_id || formData.herb_id || formData.user_id || formData.location_id || formData.restaurant_id || formData.id;
+    const action = id ? 'update' : 'create';
   
     try {
       const data = new FormData();
   
-      // 🌟 แยกการส่งข้อมูลตามตารางที่กำลังแก้ไข
+      // 2. แยก Validation และ Append ข้อมูลตามตาราง
       if (table === 'foods') {
         if (!formData.food_name || !formData.sodium_mg || !formData.location_id) {
           toast({ title: "กรุณากรอกข้อมูลอาหารให้ครบถ้วน", variant: "destructive" }); return;
@@ -242,35 +242,28 @@ const AdminDashboard = () => {
         data.append('description', formData.description || '');
         if (selectedFile) data.append('food_image', selectedFile);
       } 
-        
-      else if (table === 'locations') {
-        data.append('location_name', formData.location_name);
-      } 
-        
-      else if (table === 'restaurants') {
-        data.append('restaurant_name', formData.restaurant_name);
-        data.append('location_id', formData.location_id);
-      }
-        
       else if (table === 'medicines' || table === 'herbs') {
         if (!formData.title) { toast({ title: "กรุณากรอกชื่อรายการ", variant: "destructive" }); return; }
-        if (table === 'medicines' && !formData.med_category) { toast({ title: "กรุณาเลือกหมวดหมู่ยา", variant: "destructive" }); return; }
-        
         data.append('title', formData.title);
+        // 🌟 ส่งค่า detail และ warning ตรงๆ เพราะ Backend จะประกอบเป็น JSON ให้เอง
         data.append('detail', formData.detail || '');
         data.append('warning', formData.warning || '');
-        if (table === 'medicines') data.append('med_category', formData.med_category);
+        if (table === 'medicines') data.append('med_category', formData.med_category || '');
         if (selectedFile) data.append('image_path', selectedFile);
       }
-        
       else if (table === 'users') {
-        data.append('full_name', formData.full_name);
-        data.append('email', formData.email); // 🌟 อย่าลืม Email
+        data.append('full_name', formData.full_name || '');
+        data.append('email', formData.email || '');
         data.append('gender', formData.gender || '');
         data.append('age', formData.age || 0);
         data.append('total_points', formData.total_points || 0);
-        data.append('pretest_score', formData.pretest_score || 0);
-        data.append('posttest_score', formData.posttest_score || 0);
+      }
+      else if (table === 'locations') {
+        data.append('location_name', formData.location_name);
+      }
+      else if (table === 'restaurants') {
+        data.append('restaurant_name', formData.restaurant_name);
+        data.append('location_id', formData.location_id);
       }
   
       const url = `/index.php?page=admin&table=${table}&action=${action}&user_id=${adminId}${id ? `&id=${id}` : ''}`;
@@ -278,9 +271,13 @@ const AdminDashboard = () => {
       
       if (res.data.status === "success") {
         toast({ title: "สำเร็จ", description: res.data.message });
-        setDialogOpen(false); setSelectedFile(null); refreshData();
+        setDialogOpen(false); 
+        setSelectedFile(null); 
+        refreshData();
       }
-    } catch (e) { toast({ title: "เกิดข้อผิดพลาด", variant: "destructive" }); }
+    } catch (e) { 
+      toast({ title: "เกิดข้อผิดพลาด", variant: "destructive" }); 
+    }
   };
 
   const confirmDelete = async () => {
@@ -995,6 +992,7 @@ const openEditMedHerb = (item: any, mode: 'medicine' | 'herb') => {
                   </div>
                 </div>
               )}
+              
               {editMode === 'location' && (
                 <div className="space-y-4">
                   <div>
@@ -1029,6 +1027,7 @@ const openEditMedHerb = (item: any, mode: 'medicine' | 'herb') => {
                   </div>
                 </div>
               )}
+              
               { (editMode === 'medicine' || editMode === 'herb') && (
                 <div className="space-y-4">
                   {editMode === 'medicine' && (
@@ -1046,25 +1045,29 @@ const openEditMedHerb = (item: any, mode: 'medicine' | 'herb') => {
                     </div>
                   )}
                   <div><Label className="text-xs font-bold">ชื่อ{editMode === 'medicine' ? 'ยา' : 'สมุนไพร'}</Label><Input value={formData.title || ''} onChange={e => setFormData({...formData, title: e.target.value})} className="rounded-xl" /></div>
-                    <div>
-                      <Label className="text-xs font-bold">รายละเอียด</Label>
-                      <Textarea 
-                        value={formData.detail || ''} 
-                        onChange={e => setFormData({...formData, detail: e.target.value})} 
-                        className="rounded-xl" 
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs font-bold">คำเตือน/ข้อควรระวัง</Label>
-                      <Textarea 
-                        value={formData.warning || ''} 
-                        onChange={e => setFormData({...formData, warning: e.target.value})} 
-                        className="rounded-xl" 
-                      />
-                    </div>
+                  
+                  {/* 🌟 ปรับให้ใช้ค่าตรงๆ จาก formData ที่เราแตกไฟล์ JSON ไว้แล้ว */}
+                  <div>
+                    <Label className="text-xs font-bold">รายละเอียด</Label>
+                    <Textarea 
+                      value={formData.detail || ''} 
+                      onChange={e => setFormData({...formData, detail: e.target.value})} 
+                      className="rounded-xl" 
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold">คำเตือน/ข้อควรระวัง</Label>
+                    <Textarea 
+                      value={formData.warning || ''} 
+                      onChange={e => setFormData({...formData, warning: e.target.value})} 
+                      className="rounded-xl" 
+                    />
+                  </div>
+                  
                   <div><Label className="text-xs font-bold">รูปภาพ</Label><Input type="file" accept="image/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="rounded-xl" /></div>
                 </div>
               )}
+              
               {editMode === 'user' && (
                 <>
                   <div><Label>ชื่อ-นามสกุล</Label><Input value={formData.full_name || ''} onChange={e => setFormData({...formData, full_name: e.target.value})} /></div>
