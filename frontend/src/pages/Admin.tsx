@@ -91,6 +91,9 @@ const AdminDashboard = () => {
   const [selectedRes, setSelectedRes] = useState<number | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [expandedLocId, setExpandedLocId] = useState<number | null>(null);
+  const [medicines, setMedicines] = useState<any[]>([]);
+  const [activeSubTab, setActiveSubTab] = useState<"medicine" | "herb">("medicine");
+  const [expandedMedCat, setExpandedMedCat] = useState<string | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState<"food" | "location" | "restaurant" | "herb" | "user" | null>(null);
@@ -217,11 +220,13 @@ const AdminDashboard = () => {
   const action = (formData.food_id || formData.herb_id || formData.user_id || formData.location_id || formData.restaurant_id || formData.id) ? 'update' : 'create';
   
   const table = editMode === 'food' ? 'foods' : 
-                editMode === 'herb' ? 'herbs' : 
-                editMode === 'user' ? 'users' : 
-                editMode === 'location' ? 'locations' : 'restaurants';
+                  editMode === 'medicine' ? 'medicines' : 
+                  editMode === 'herb' ? 'herbs' : 
+                  editMode === 'user' ? 'users' : 
+                  editMode === 'location' ? 'locations' : 'restaurants';
 
-  const id = formData.food_id || formData.herb_id || formData.user_id || formData.location_id || formData.restaurant_id || formData.id;
+  const id = formData.food_id || formData.med_id || formData.herb_id || formData.user_id || formData.location_id || formData.restaurant_id || formData.id;
+  const action = id ? 'update' : 'create';
   
     try {
       const data = new FormData();
@@ -241,19 +246,25 @@ const AdminDashboard = () => {
         data.append('description', formData.description || '');
         if (selectedFile) data.append('food_image', selectedFile);
       } 
+        
       else if (table === 'locations') {
         data.append('location_name', formData.location_name);
       } 
+        
       else if (table === 'restaurants') {
         data.append('restaurant_name', formData.restaurant_name);
         data.append('location_id', formData.location_id);
       }
-      else if (table === 'herbs') {
+        
+      else if (table === 'medicines' || table === 'herbs') {
+        if (!formData.title) { toast({ title: "กรุณากรอกชื่อรายการ", variant: "destructive" }); return; }
         data.append('title', formData.title);
         data.append('detail', formData.detail || '');
         data.append('warning', formData.warning || '');
+        if (table === 'medicines') data.append('med_category', formData.med_category);
         if (selectedFile) data.append('image_path', selectedFile);
-      } 
+      }
+        
       else if (table === 'users') {
         data.append('full_name', formData.full_name);
         data.append('email', formData.email); // 🌟 อย่าลืม Email
@@ -318,7 +329,12 @@ const refreshData = () => {
     fetchData("locations", setLocations); 
     fetchData("restaurants", setRestaurants); 
   }
-  if (activeTab === "herbs") fetchData("herbs", setHerbs);
+  
+  if (activeTab === "herbs") {
+    fetchData("medicines", setMedicines);
+    fetchData("herbs", setHerbs);
+  }
+  
   if (activeTab === "users") fetchData("users", setUsersList);
 };
 
@@ -666,7 +682,7 @@ const refreshData = () => {
                   <MapPin className="w-4 h-4 text-primary" /> สถานที่บันทึกอาหาร
                 </h2>
                 <Button size="sm" onClick={() => { setEditMode('location'); setFormData({}); setDialogOpen(true); }}>
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-4 h-4" />เพิ่มสถานที่
                 </Button>
               </div>
         
@@ -749,27 +765,72 @@ const refreshData = () => {
 
         {/* ==================== TAB สมุนไพร/ยา ==================== */}
         {activeTab === "herbs" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-bold">สมุนไพรและยา ({herbs.length})</h2>
-              <Button onClick={() => { setEditMode('herb'); setFormData({}); setDialogOpen(true); }}>
-                <Plus className="w-4 h-4 mr-2" /> เพิ่มสมุนไพร/ยา
-              </Button>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            {/* ส่วนเลือกประเภทย่อย (Sub-tabs) */}
+            <div className="flex gap-2 p-1 bg-accent/20 rounded-2xl w-fit">
+              <button onClick={() => setActiveSubTab("medicine")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeSubTab === "medicine" ? "bg-white shadow-sm text-primary" : "text-muted-foreground"}`}>ยาอันตรายต่อไต</button>
+              <button onClick={() => setActiveSubTab("herb")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeSubTab === "herb" ? "bg-white shadow-sm text-primary" : "text-muted-foreground"}`}>สมุนไพรที่ควรระวัง</button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {herbs.map(h => (
-                <div key={h.herb_id || h.med_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center">
-                  <img src={`/med-herb/${h.image_path}`} className="w-14 h-14 rounded-xl object-cover bg-accent" alt="" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold truncate">{h.title}</p>
-                    <p className="text-[10px] text-muted-foreground line-clamp-1">{h.content?.detail}</p>
-                  </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => { setEditMode('herb'); setFormData(h); setDialogOpen(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => setDeleteDialog({ open: true, type: "herb", id: h.herb_id || h.med_id, name: h.title })} className="p-2 text-destructive hover:bg-destructive/10 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </div>
-                </div>
-              ))}
+        
+            <div className="glass-card p-6 rounded-3xl border-2 border-primary/5 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-sm font-bold flex items-center gap-2">
+                  <Pill className="w-4 h-4 text-primary" /> รายการ{activeSubTab === "medicine" ? "ยา" : "สมุนไพร"}
+                </h2>
+                <Button size="sm" onClick={() => { setEditMode(activeSubTab); setFormData({}); setDialogOpen(true); }}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+        
+              <div className="space-y-3">
+                {activeSubTab === "medicine" ? (
+                  // 💊 ส่วนของ ยา (มีหมวดหมู่)
+                  Array.from(new Set(medicines.map(m => m.med_category))).map(cat => {
+                    const isExpanded = expandedMedCat === cat;
+                    return (
+                      <div key={cat} className="overflow-hidden border border-border/50 rounded-2xl bg-accent/5">
+                        <div className="flex justify-between items-center p-4 bg-white/50 cursor-pointer" onClick={() => setExpandedMedCat(isExpanded ? null : cat)}>
+                          <div className="flex items-center gap-3">
+                            <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                            <span className="text-sm font-bold text-foreground">{cat}</span>
+                          </div>
+                        </div>
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="bg-accent/10 border-t border-border/30">
+                              <div className="p-3 space-y-2">
+                                {medicines.filter(m => m.med_category === cat).map(med => (
+                                  <div key={med.med_id} className="flex justify-between items-center p-3 bg-white rounded-xl shadow-sm">
+                                    <span className="text-xs font-medium">{med.title}</span>
+                                    <div className="flex gap-1">
+                                      <button onClick={() => { setEditMode('medicine'); setFormData(med); setDialogOpen(true); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
+                                      <button onClick={() => setDeleteDialog({ open: true, table: "medicines", id: med.med_id, name: med.title })} className="p-1.5 text-destructive hover:bg-destructive/5 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })
+                ) : (
+                  // 🌿 ส่วนของ สมุนไพร (ไม่มีหมวดหมู่ - ใช้การเว้นวรรคให้ตรงกัน)
+                  herbs.map(herb => (
+                    <div key={herb.herb_id} className="flex justify-between items-center p-4 bg-white/50 border border-border/50 rounded-2xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-4" /> {/* Spacer ให้ชื่อตรงกับแบบที่มีไอคอน */}
+                        <span className="text-sm font-bold text-foreground">{herb.title}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => { setEditMode('herb'); setFormData(herb); setDialogOpen(true); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => setDeleteDialog({ open: true, table: "herbs", id: herb.herb_id, name: herb.title })} className="p-1.5 text-destructive hover:bg-destructive/5 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </motion.div>
         )}
@@ -805,152 +866,166 @@ const refreshData = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>{formData.id ? 'แก้ไข' : 'เพิ่ม'}ข้อมูล</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4">
-            {editMode === 'food' && (
-              <div className="space-y-4">
-                {/* ชื่ออาหาร */}
-                <div>
-                  <Label className="text-xs font-bold text-muted-foreground">ชื่อเมนูอาหาร</Label>
-                  <Input 
-                    value={formData.food_name || ''} 
-                    onChange={e => setFormData({...formData, food_name: e.target.value})} 
-                    placeholder="เช่น ข้าวมันไก่"
-                    className="rounded-xl mt-1"
-                  />
+            <div className="space-y-4 py-4">
+              {editMode === 'food' && (
+                <div className="space-y-4">
+                  {/* ชื่ออาหาร */}
+                  <div>
+                    <Label className="text-xs font-bold text-muted-foreground">ชื่อเมนูอาหาร</Label>
+                    <Input 
+                      value={formData.food_name || ''} 
+                      onChange={e => setFormData({...formData, food_name: e.target.value})} 
+                      placeholder="เช่น ข้าวมันไก่"
+                      className="rounded-xl mt-1"
+                    />
+                  </div>
+              
+                  {/* โซเดียม */}
+                  <div>
+                    <Label className="text-xs font-bold text-muted-foreground">ปริมาณโซเดียม (mg)</Label>
+                    <Input 
+                      type="number" 
+                      value={formData.sodium_mg || ''} 
+                      onChange={e => setFormData({...formData, sodium_mg: e.target.value})} 
+                      placeholder="0"
+                      className="rounded-xl mt-1"
+                    />
+                  </div>
+              
+                  {/* 🌟 Dropdown เลือกสถานที่ (แทนการกรอก ID) */}
+                  <div>
+                    <Label className="text-xs font-bold text-muted-foreground">สถานที่จำหน่าย</Label>
+                    <select
+                      value={formData.location_id || ""}
+                      onChange={(e) => {
+                        const locId = e.target.value ? Number(e.target.value) : "";
+                        // เมื่อเปลี่ยนสถานที่ ให้ล้างค่าร้านอาหารเดิมทิ้งเพื่อป้องกันข้อมูลข้ามโรง
+                        setFormData({ ...formData, location_id: locId, restaurant_id: "" });
+                      }}
+                      className="w-full p-2.5 bg-background border border-input rounded-xl text-sm mt-1 focus:ring-2 focus:ring-primary/20 outline-none"
+                    >
+                      <option value="">-- เลือกสถานที่ --</option>
+                      {locations.map(loc => (
+                        <option key={loc.location_id} value={loc.location_id}>{loc.location_name}</option>
+                      ))}
+                    </select>
+                  </div>
+              
+                  {/* 🌟 Dropdown เลือกร้านอาหาร (แสดงเฉพาะ โรงเย็น/โรงร้อน) */}
+                  <AnimatePresence>
+                    {formData.location_id && 
+                     locations.find(l => l.location_id === Number(formData.location_id))?.location_name.match(/โรงเย็น|โรงร้อน/) && (
+                      <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}>
+                        <Label className="text-xs font-bold text-primary">เลือกร้านอาหาร</Label>
+                        <select
+                          value={formData.restaurant_id || ""}
+                          onChange={(e) => setFormData({ ...formData, restaurant_id: e.target.value ? Number(e.target.value) : "" })}
+                          className="w-full p-2.5 bg-primary/5 border border-primary/20 rounded-xl text-sm mt-1 focus:ring-2 focus:ring-primary/20 outline-none font-medium"
+                        >
+                          <option value="">-- เลือกร้านอาหาร --</option>
+                          {restaurants
+                            .filter(r => {
+                              // 🔍 ลองใส่ console.log เพื่อเช็คข้อมูลว่ามาจริงไหม
+                              // console.log("Restaurant Data:", r); 
+                              return Number(r.location_id) === Number(selectedLoc); // 🌟 แปลงเป็น Number ทั้งคู่ก่อนเทียบ
+                            })
+                            .map(r => (
+                              <option key={r.restaurant_id} value={r.restaurant_id}>{r.restaurant_name}</option>
+                            ))
+                          }
+                        </select>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+              
+                  {/* อัปโหลดรูปภาพ */}
+                  <div>
+                    <Label className="text-xs font-bold text-muted-foreground flex items-center gap-2">
+                      <ImageIcon className="w-3 h-3" /> รูปภาพอาหาร
+                    </Label>
+                    <Input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+                      className="rounded-xl mt-1 file:bg-primary/10 file:text-primary file:border-0 file:rounded-md file:px-2"
+                    />
+                    {formData.food_image && !selectedFile && (
+                      <p className="text-[10px] text-muted-foreground mt-1 px-1">ไฟล์ปัจจุบัน: {formData.food_image}</p>
+                    )}
+                  </div>
                 </div>
-            
-                {/* โซเดียม */}
-                <div>
-                  <Label className="text-xs font-bold text-muted-foreground">ปริมาณโซเดียม (mg)</Label>
-                  <Input 
-                    type="number" 
-                    value={formData.sodium_mg || ''} 
-                    onChange={e => setFormData({...formData, sodium_mg: e.target.value})} 
-                    placeholder="0"
-                    className="rounded-xl mt-1"
-                  />
+              )}
+              {editMode === 'location' && (
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-xs font-bold text-muted-foreground">ชื่อสถานที่</Label>
+                    <Input 
+                      value={formData.location_name || ''} 
+                      onChange={e => setFormData({...formData, location_name: e.target.value})} 
+                      placeholder="เช่น โรงอาหาร 2"
+                      className="rounded-xl mt-1"
+                    />
+                  </div>
                 </div>
-            
-                {/* 🌟 Dropdown เลือกสถานที่ (แทนการกรอก ID) */}
-                <div>
-                  <Label className="text-xs font-bold text-muted-foreground">สถานที่จำหน่าย</Label>
-                  <select
-                    value={formData.location_id || ""}
-                    onChange={(e) => {
-                      const locId = e.target.value ? Number(e.target.value) : "";
-                      // เมื่อเปลี่ยนสถานที่ ให้ล้างค่าร้านอาหารเดิมทิ้งเพื่อป้องกันข้อมูลข้ามโรง
-                      setFormData({ ...formData, location_id: locId, restaurant_id: "" });
-                    }}
-                    className="w-full p-2.5 bg-background border border-input rounded-xl text-sm mt-1 focus:ring-2 focus:ring-primary/20 outline-none"
-                  >
-                    <option value="">-- เลือกสถานที่ --</option>
-                    {locations.map(loc => (
-                      <option key={loc.location_id} value={loc.location_id}>{loc.location_name}</option>
-                    ))}
-                  </select>
+              )}
+              
+              {editMode === 'restaurant' && (
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-xs font-bold text-muted-foreground">ชื่อร้านอาหาร</Label>
+                    <Input 
+                      value={formData.restaurant_name || ''} 
+                      onChange={e => setFormData({...formData, restaurant_name: e.target.value})} 
+                      placeholder="เช่น ร้านข้าวมันไก่"
+                      className="rounded-xl mt-1"
+                    />
+                  </div>
+                  {/* แสดงชื่อสถานที่ที่ร้านนี้สังกัดอยู่เพื่อป้องกันการหลงลืม */}
+                  <div className="p-3 bg-accent/20 rounded-xl">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">สถานที่บันทึก</p>
+                    <p className="text-sm font-bold text-primary">
+                      {locations.find(l => l.location_id === Number(formData.location_id))?.location_name}
+                    </p>
+                  </div>
                 </div>
-            
-                {/* 🌟 Dropdown เลือกร้านอาหาร (แสดงเฉพาะ โรงเย็น/โรงร้อน) */}
-                <AnimatePresence>
-                  {formData.location_id && 
-                   locations.find(l => l.location_id === Number(formData.location_id))?.location_name.match(/โรงเย็น|โรงร้อน/) && (
-                    <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}>
-                      <Label className="text-xs font-bold text-primary">เลือกร้านอาหาร</Label>
-                      <select
-                        value={formData.restaurant_id || ""}
-                        onChange={(e) => setFormData({ ...formData, restaurant_id: e.target.value ? Number(e.target.value) : "" })}
-                        className="w-full p-2.5 bg-primary/5 border border-primary/20 rounded-xl text-sm mt-1 focus:ring-2 focus:ring-primary/20 outline-none font-medium"
+              )}
+              { (editMode === 'medicine' || editMode === 'herb') && (
+                <div className="space-y-4">
+                  {editMode === 'medicine' && (
+                    <div>
+                      <Label className="text-xs font-bold text-muted-foreground">หมวดหมู่ยา</Label>
+                      <select 
+                        value={formData.med_category || ""} 
+                        onChange={e => setFormData({...formData, med_category: e.target.value})}
+                        className="w-full p-2.5 bg-background border rounded-xl text-sm mt-1"
                       >
-                        <option value="">-- เลือกร้านอาหาร --</option>
-                        {restaurants
-                          .filter(r => {
-                            // 🔍 ลองใส่ console.log เพื่อเช็คข้อมูลว่ามาจริงไหม
-                            // console.log("Restaurant Data:", r); 
-                            return Number(r.location_id) === Number(selectedLoc); // 🌟 แปลงเป็น Number ทั้งคู่ก่อนเทียบ
-                          })
-                          .map(r => (
-                            <option key={r.restaurant_id} value={r.restaurant_id}>{r.restaurant_name}</option>
-                          ))
-                        }
+                        <option value="">-- เลือกหมวดหมู่ --</option>
+                        <option value="NSAIDs">NSAIDs</option>
+                        <option value="Corticosteroid">Corticosteroid</option>
                       </select>
-                    </motion.div>
+                    </div>
                   )}
-                </AnimatePresence>
-            
-                {/* อัปโหลดรูปภาพ */}
-                <div>
-                  <Label className="text-xs font-bold text-muted-foreground flex items-center gap-2">
-                    <ImageIcon className="w-3 h-3" /> รูปภาพอาหาร
-                  </Label>
-                  <Input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={e => setSelectedFile(e.target.files?.[0] || null)}
-                    className="rounded-xl mt-1 file:bg-primary/10 file:text-primary file:border-0 file:rounded-md file:px-2"
-                  />
-                  {formData.food_image && !selectedFile && (
-                    <p className="text-[10px] text-muted-foreground mt-1 px-1">ไฟล์ปัจจุบัน: {formData.food_image}</p>
-                  )}
+                  <div><Label className="text-xs font-bold">ชื่อ{editMode === 'medicine' ? 'ยา' : 'สมุนไพร'}</Label><Input value={formData.title || ''} onChange={e => setFormData({...formData, title: e.target.value})} className="rounded-xl" /></div>
+                  <div><Label className="text-xs font-bold">รายละเอียด</Label><Textarea value={formData.detail || JSON.parse(formData.content || '{}').detail || ''} onChange={e => setFormData({...formData, detail: e.target.value})} className="rounded-xl" /></div>
+                  <div><Label className="text-xs font-bold">คำเตือน/ข้อควรระวัง</Label><Textarea value={formData.warning || JSON.parse(formData.content || '{}').warning || ''} onChange={e => setFormData({...formData, warning: e.target.value})} className="rounded-xl" /></div>
+                  <div><Label className="text-xs font-bold">รูปภาพ</Label><Input type="file" accept="image/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} className="rounded-xl" /></div>
                 </div>
-              </div>
-            )}
-            {editMode === 'location' && (
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-xs font-bold text-muted-foreground">ชื่อสถานที่</Label>
-                  <Input 
-                    value={formData.location_name || ''} 
-                    onChange={e => setFormData({...formData, location_name: e.target.value})} 
-                    placeholder="เช่น โรงอาหาร 2"
-                    className="rounded-xl mt-1"
-                  />
-                </div>
-              </div>
-            )}
-            
-            {editMode === 'restaurant' && (
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-xs font-bold text-muted-foreground">ชื่อร้านอาหาร</Label>
-                  <Input 
-                    value={formData.restaurant_name || ''} 
-                    onChange={e => setFormData({...formData, restaurant_name: e.target.value})} 
-                    placeholder="เช่น ร้านข้าวมันไก่"
-                    className="rounded-xl mt-1"
-                  />
-                </div>
-                {/* แสดงชื่อสถานที่ที่ร้านนี้สังกัดอยู่เพื่อป้องกันการหลงลืม */}
-                <div className="p-3 bg-accent/20 rounded-xl">
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold">สถานที่บันทึก</p>
-                  <p className="text-sm font-bold text-primary">
-                    {locations.find(l => l.location_id === Number(formData.location_id))?.location_name}
-                  </p>
-                </div>
-              </div>
-            )}
-            {editMode === 'herb' && (
-              <>
-                <div><Label>ชื่อสมุนไพร/ยา</Label><Input value={formData.title || ''} onChange={e => setFormData({...formData, title: e.target.value})} /></div>
-                <div><Label>รายละเอียด</Label><Textarea value={formData.detail || ''} onChange={e => setFormData({...formData, detail: e.target.value})} /></div>
-                <div><Label>คำเตือน</Label><Textarea value={formData.warning || ''} onChange={e => setFormData({...formData, warning: e.target.value})} /></div>
-                <div><Label>รูปภาพ</Label><Input type="file" accept="image/*" onChange={e => setSelectedFile(e.target.files?.[0] || null)} /></div>
-              </>
-            )}
-            {editMode === 'user' && (
-              <>
-                <div><Label>ชื่อ-นามสกุล</Label><Input value={formData.full_name || ''} onChange={e => setFormData({...formData, full_name: e.target.value})} /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><Label>เพศ</Label><Input value={formData.gender || ''} onChange={e => setFormData({...formData, gender: e.target.value})} /></div>
-                  <div><Label>อายุ</Label><Input type="number" value={formData.age || ''} onChange={e => setFormData({...formData, age: e.target.value})} /></div>
-                </div>
-                <div><Label>แต้มสะสม</Label><Input type="number" value={formData.total_points || ''} onChange={e => setFormData({...formData, total_points: e.target.value})} /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><Label>Pre-test Score</Label><Input type="number" value={formData.pretest_score || ''} onChange={e => setFormData({...formData, pretest_score: e.target.value})} /></div>
-                  <div><Label>Post-test Score</Label><Input type="number" value={formData.posttest_score || ''} onChange={e => setFormData({...formData, posttest_score: e.target.value})} /></div>
-                </div>
-              </>
-            )}
-          </div>
+              )}
+              {editMode === 'user' && (
+                <>
+                  <div><Label>ชื่อ-นามสกุล</Label><Input value={formData.full_name || ''} onChange={e => setFormData({...formData, full_name: e.target.value})} /></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><Label>เพศ</Label><Input value={formData.gender || ''} onChange={e => setFormData({...formData, gender: e.target.value})} /></div>
+                    <div><Label>อายุ</Label><Input type="number" value={formData.age || ''} onChange={e => setFormData({...formData, age: e.target.value})} /></div>
+                  </div>
+                  <div><Label>แต้มสะสม</Label><Input type="number" value={formData.total_points || ''} onChange={e => setFormData({...formData, total_points: e.target.value})} /></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><Label>Pre-test Score</Label><Input type="number" value={formData.pretest_score || ''} onChange={e => setFormData({...formData, pretest_score: e.target.value})} /></div>
+                    <div><Label>Post-test Score</Label><Input type="number" value={formData.posttest_score || ''} onChange={e => setFormData({...formData, posttest_score: e.target.value})} /></div>
+                  </div>
+                </>
+              )}
+            </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>ยกเลิก</Button>
             <Button onClick={handleSave}>บันทึกข้อมูล</Button>
