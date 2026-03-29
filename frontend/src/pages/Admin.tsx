@@ -763,75 +763,96 @@ const refreshData = () => {
 
         {/* ==================== TAB สมุนไพร/ยา ==================== */}
         {activeTab === "herbs" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            {/* ส่วนเลือกประเภทย่อย (Sub-tabs) */}
-            <div className="flex gap-2 p-1 bg-accent/20 rounded-2xl w-fit">
-              <button onClick={() => setActiveSubTab("medicine")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeSubTab === "medicine" ? "bg-white shadow-sm text-primary" : "text-muted-foreground"}`}>ยาอันตรายต่อไต</button>
-              <button onClick={() => setActiveSubTab("herb")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeSubTab === "herb" ? "bg-white shadow-sm text-primary" : "text-muted-foreground"}`}>สมุนไพรที่ควรระวัง</button>
+      {activeTab === "herbs" && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+          {/* ส่วนเลือกประเภทย่อย (Sub-tabs) */}
+          <div className="flex gap-2 p-1 bg-accent/20 rounded-2xl w-fit">
+            <button onClick={() => setActiveSubTab("medicine")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeSubTab === "medicine" ? "bg-white shadow-sm text-primary" : "text-muted-foreground"}`}>ยาอันตรายต่อไต</button>
+            <button onClick={() => setActiveSubTab("herb")} className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeSubTab === "herb" ? "bg-white shadow-sm text-primary" : "text-muted-foreground"}`}>สมุนไพรที่ควรระวัง</button>
+          </div>
+      
+          <div className="glass-card p-6 rounded-3xl border-2 border-primary/5 shadow-sm">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-sm font-bold flex items-center gap-2">
+                <Pill className="w-4 h-4 text-primary" /> รายการ{activeSubTab === "medicine" ? "ยา" : "สมุนไพร"}
+              </h2>
+              <Button size="sm" onClick={() => { setEditMode(activeSubTab); setFormData({}); setDialogOpen(true); }}>
+                <Plus className="w-4 h-4" />เพิ่ม{activeSubTab === "medicine" ? "ยา" : "สมุนไพร"}
+              </Button>
             </div>
-        
-            <div className="glass-card p-6 rounded-3xl border-2 border-primary/5 shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-sm font-bold flex items-center gap-2">
-                  <Pill className="w-4 h-4 text-primary" /> รายการ{activeSubTab === "medicine" ? "ยา" : "สมุนไพร"}
-                </h2>
-                <Button size="sm" onClick={() => { setEditMode(activeSubTab); setFormData({}); setDialogOpen(true); }}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-        
-              <div className="space-y-3">
-                {activeSubTab === "medicine" ? (
-                  // 💊 ส่วนของ ยา (มีหมวดหมู่)
-                  Array.from(new Set(medicines.map(m => m.med_category))).map(cat => {
-                    const isExpanded = expandedMedCat === cat;
-                    return (
-                      <div key={cat} className="overflow-hidden border border-border/50 rounded-2xl bg-accent/5">
-                        <div className="flex justify-between items-center p-4 bg-white/50 cursor-pointer" onClick={() => setExpandedMedCat(isExpanded ? null : cat)}>
-                          <div className="flex items-center gap-3">
-                            <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                            <span className="text-sm font-bold text-foreground">{cat}</span>
-                          </div>
+      
+            <div className="space-y-3">
+              {activeSubTab === "medicine" ? (
+                // 💊 รูปที่ 1: ส่วนของ ยา (มีหมวดหมู่แบบ Dropdown)
+                Array.from(new Set(medicines.map(m => m.med_category))).map(cat => {
+                  const isExpanded = expandedMedCat === cat;
+                  return (
+                    <div key={cat} className="overflow-hidden border border-border/50 rounded-2xl bg-accent/5">
+                      <div 
+                        className="flex justify-between items-center p-4 bg-white/50 cursor-pointer" 
+                        onClick={() => setExpandedMedCat(isExpanded ? null : cat)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          <span className="text-sm font-bold text-foreground">{cat}</span>
                         </div>
-                        <AnimatePresence>
-                          {isExpanded && (
-                            <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="bg-accent/10 border-t border-border/30">
-                              <div className="p-3 space-y-2">
-                                {medicines.filter(m => m.med_category === cat).map(med => (
-                                  <div key={med.med_id} className="flex justify-between items-center p-3 bg-white rounded-xl shadow-sm">
-                                    <span className="text-xs font-medium">{med.title}</span>
-                                    <div className="flex gap-1">
-                                      <button onClick={() => { setEditMode('medicine'); setFormData(med); setDialogOpen(true); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
-                                      <button onClick={() => setDeleteDialog({ open: true, table: "medicines", id: med.med_id, name: med.title })} className="p-1.5 text-destructive hover:bg-destructive/5 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
-                                    </div>
+                      </div>
+                      
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="bg-accent/10 border-t border-border/30">
+                            <div className="p-3 space-y-2">
+                              {medicines.filter(m => m.med_category === cat).map(med => (
+                                <div key={med.med_id} className="flex justify-between items-center p-3 bg-white rounded-xl shadow-sm gap-4">
+                                  <div className="flex items-center gap-4 flex-1">
+                                    {/* 🌟 แสดงรูปภาพยา */}
+                                    <img 
+                                      src={`/med-herb/${med.image_path}`} 
+                                      className="w-12 h-12 rounded-lg object-cover bg-accent shadow-inner"
+                                      onError={(e) => { (e.target as HTMLImageElement).src = "/foods/default-food.png" }}
+                                      alt="" 
+                                    />
+                                    <span className="text-xs font-bold text-foreground">{med.title}</span>
                                   </div>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  })
-                ) : (
-                  // 🌿 ส่วนของ สมุนไพร (ไม่มีหมวดหมู่ - ใช้การเว้นวรรคให้ตรงกัน)
-                  herbs.map(herb => (
-                    <div key={herb.herb_id} className="flex justify-between items-center p-4 bg-white/50 border border-border/50 rounded-2xl">
-                      <div className="flex items-center gap-3">
-                        <div className="w-4" /> {/* Spacer ให้ชื่อตรงกับแบบที่มีไอคอน */}
-                        <span className="text-sm font-bold text-foreground">{herb.title}</span>
-                      </div>
-                      <div className="flex gap-1">
-                        <button onClick={() => { setEditMode('herb'); setFormData(herb); setDialogOpen(true); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
-                        <button onClick={() => setDeleteDialog({ open: true, table: "herbs", id: herb.herb_id, name: herb.title })} className="p-1.5 text-destructive hover:bg-destructive/5 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
-                      </div>
+                                  <div className="flex gap-1">
+                                    <button onClick={() => { setEditMode('medicine'); setFormData(med); setDialogOpen(true); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => setDeleteDialog({ open: true, table: "medicines", id: med.med_id, name: med.title })} className="p-1.5 text-destructive hover:bg-destructive/5 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                  ))
-                )}
-              </div>
+                  );
+                })
+              ) : (
+                // 🌿 รูปที่ 2: ส่วนของ สมุนไพร (ไม่มีหมวดหมู่ - เพิ่มรูปภาพ)
+                herbs.map(herb => (
+                  <div key={herb.herb_id} className="flex justify-between items-center p-4 bg-white/50 border border-border/50 rounded-2xl gap-4">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-4" /> {/* Spacer เพื่อให้ตรงแนวกับยาที่มีลูกศร */}
+                      {/* 🌟 แสดงรูปภาพสมุนไพร */}
+                      <img 
+                        src={`/med-herb/${herb.image_path}`} 
+                        className="w-12 h-12 rounded-lg object-cover bg-accent shadow-inner"
+                        onError={(e) => { (e.target as HTMLImageElement).src = "/foods/default-food.png" }}
+                        alt="" 
+                      />
+                      <span className="text-sm font-bold text-foreground">{herb.title}</span>
+                    </div>
+                    <div className="flex gap-1">
+                      <button onClick={() => { setEditMode('herb'); setFormData(herb); setDialogOpen(true); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setDeleteDialog({ open: true, table: "herbs", id: herb.herb_id, name: herb.title })} className="p-1.5 text-destructive hover:bg-destructive/5 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          </motion.div>
-        )}
+          </div>
+        </motion.div>
+      )}
 
         {/* ==================== TAB จัดการผู้ใช้ ==================== */}
         {activeTab === "users" && (
@@ -1013,7 +1034,20 @@ const refreshData = () => {
                 <>
                   <div><Label>ชื่อ-นามสกุล</Label><Input value={formData.full_name || ''} onChange={e => setFormData({...formData, full_name: e.target.value})} /></div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div><Label>เพศ</Label><Input value={formData.gender || ''} onChange={e => setFormData({...formData, gender: e.target.value})} /></div>
+                    <div>
+                      <Label>เพศ</Label>
+                      <select
+                        value={formData.gender || ""}
+                        onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                        className="w-full p-2.5 bg-background border border-input rounded-xl text-sm mt-1 focus:ring-2 focus:ring-primary/20 outline-none"
+                      >
+                        <option value="">-- เลือกเพศ --</option>
+                        <option value="ชาย">ชาย</option>
+                        <option value="หญิง">หญิง</option>
+                        <option value="อื่นๆ">อื่นๆ</option>
+                        <option value="ไม่ระบุ">ไม่ระบุ</option>
+                      </select>
+                    </div>
                     <div><Label>อายุ</Label><Input type="number" value={formData.age || ''} onChange={e => setFormData({...formData, age: e.target.value})} /></div>
                   </div>
                   <div><Label>แต้มสะสม</Label><Input type="number" value={formData.total_points || ''} onChange={e => setFormData({...formData, total_points: e.target.value})} /></div>
