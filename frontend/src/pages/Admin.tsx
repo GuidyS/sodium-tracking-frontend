@@ -112,7 +112,10 @@ const AdminDashboard = () => {
     }
     
     if (activeTab === "locations") { fetchLocations(); fetchRestaurants(); }
-    if (activeTab === "herbs") fetchHerbs();
+    if (activeTab === "herbs") {
+      fetchData("medicines", setMedicines);
+      fetchHerbs();
+    };
     if (activeTab === "users") fetchUsers();
   }, [activeTab, dateRange]);
 
@@ -211,11 +214,6 @@ const AdminDashboard = () => {
 
   // ===== Generic Handle Save & Delete =====
   const handleSave = async () => {
-    // 1. ตรวจสอบข้อมูลเบื้องต้น
-    if (!formData.food_name || !formData.sodium_mg || !formData.location_id) {
-      toast({ title: "กรุณากรอกข้อมูลให้ครบถ้วน", variant: "destructive" });
-      return;
-    }
   
   const table = editMode === 'food' ? 'foods' : 
                   editMode === 'medicine' ? 'medicines' : 
@@ -232,7 +230,7 @@ const AdminDashboard = () => {
       // 🌟 แยกการส่งข้อมูลตามตารางที่กำลังแก้ไข
       if (table === 'foods') {
         if (!formData.food_name || !formData.sodium_mg || !formData.location_id) {
-          toast({ title: "กรุณากรอกข้อมูลอาหารให้ครบ", variant: "destructive" }); return;
+          toast({ title: "กรุณากรอกข้อมูลอาหารให้ครบถ้วน", variant: "destructive" }); return;
         }
         const loc = locations.find(l => l.location_id === Number(formData.location_id));
         const hasRes = loc?.location_name.match(/โรงเย็น|โรงร้อน/) ? 1 : 0;
@@ -256,6 +254,8 @@ const AdminDashboard = () => {
         
       else if (table === 'medicines' || table === 'herbs') {
         if (!formData.title) { toast({ title: "กรุณากรอกชื่อรายการ", variant: "destructive" }); return; }
+        if (table === 'medicines' && !formData.med_category) { toast({ title: "กรุณาเลือกหมวดหมู่ยา", variant: "destructive" }); return; }
+        
         data.append('title', formData.title);
         data.append('detail', formData.detail || '');
         data.append('warning', formData.warning || '');
