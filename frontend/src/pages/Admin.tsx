@@ -679,7 +679,7 @@ const refreshData = () => {
             <div className="glass-card p-6 rounded-3xl border-2 border-primary/5 shadow-sm">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-sm font-bold flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary" /> สถานที่บันทึกอาหาร
+                  <MapPin className="w-4 h-4 text-muted-foreground" /> สถานที่บันทึกอาหาร
                 </h2>
                 <Button size="sm" onClick={() => { setEditMode('location'); setFormData({}); setDialogOpen(true); }}>
                   <Plus className="w-4 h-4" />เพิ่มสถานที่
