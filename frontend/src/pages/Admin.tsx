@@ -217,8 +217,6 @@ const AdminDashboard = () => {
       return;
     }
   
-  const action = (formData.food_id || formData.herb_id || formData.user_id || formData.location_id || formData.restaurant_id || formData.id) ? 'update' : 'create';
-  
   const table = editMode === 'food' ? 'foods' : 
                   editMode === 'medicine' ? 'medicines' : 
                   editMode === 'herb' ? 'herbs' : 
