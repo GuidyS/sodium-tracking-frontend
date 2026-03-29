@@ -213,72 +213,73 @@ const AdminDashboard = () => {
   };
 
   // ===== Generic Handle Save & Delete =====
-  const handleSave = async () => {
-    // 1. กำหนด Table และ ID ให้ครอบคลุมทุกตาราง
-    const table = editMode === 'food' ? 'foods' : 
-                  editMode === 'medicine' ? 'medicines' : 
-                  editMode === 'herb' ? 'herbs' : 
-                  editMode === 'user' ? 'users' : 
-                  editMode === 'location' ? 'locations' : 'restaurants';
-  
-    const id = formData.food_id || formData.med_id || formData.herb_id || formData.user_id || formData.location_id || formData.restaurant_id || formData.id;
-    const action = id ? 'update' : 'create';
-  
-    try {
-      const data = new FormData();
-  
-      // 2. แยก Validation และ Append ข้อมูลตามตาราง
-      if (table === 'foods') {
-        if (!formData.food_name || !formData.sodium_mg || !formData.location_id) {
-          toast({ title: "กรุณากรอกข้อมูลอาหารให้ครบถ้วน", variant: "destructive" }); return;
-        }
-        const loc = locations.find(l => l.location_id === Number(formData.location_id));
-        const hasRes = loc?.location_name.match(/โรงเย็น|โรงร้อน/) ? 1 : 0;
-        data.append('food_name', formData.food_name);
-        data.append('sodium_mg', formData.sodium_mg);
-        data.append('location_id', formData.location_id);
-        data.append('has_restaurant', String(hasRes));
-        data.append('restaurant_id', formData.restaurant_id || 0);
-        data.append('description', formData.description || '');
-        if (selectedFile) data.append('food_image', selectedFile);
-      } 
-      else if (table === 'medicines' || table === 'herbs') {
-        if (!formData.title) { toast({ title: "กรุณากรอกชื่อรายการ", variant: "destructive" }); return; }
-        data.append('title', formData.title);
-        // 🌟 ส่งค่า detail และ warning ตรงๆ เพราะ Backend จะประกอบเป็น JSON ให้เอง
-        data.append('detail', formData.detail || '');
-        data.append('warning', formData.warning || '');
-        if (table === 'medicines') data.append('med_category', formData.med_category || '');
-        if (selectedFile) data.append('image_path', selectedFile);
+const handleSave = async () => {
+  // 🌟 1. กำหนดตารางและ ID (รวม med_id เข้าไปด้วย)
+  const table = editMode === 'food' ? 'foods' : 
+                editMode === 'medicine' ? 'medicines' : 
+                editMode === 'herb' ? 'herbs' : 
+                editMode === 'user' ? 'users' : 
+                editMode === 'location' ? 'locations' : 'restaurants';
+
+  const id = formData.food_id || formData.med_id || formData.herb_id || formData.user_id || formData.location_id || formData.restaurant_id || formData.id;
+  const action = id ? 'update' : 'create';
+
+  try {
+    const data = new FormData();
+
+    // 🌟 2. แยกการตรวจสอบข้อมูล (Validation) ตามตาราง
+    if (table === 'foods') {
+      if (!formData.food_name || !formData.sodium_mg || !formData.location_id) {
+        toast({ title: "กรุณากรอกข้อมูลอาหารให้ครบถ้วน", variant: "destructive" }); return;
       }
-      else if (table === 'users') {
-        data.append('full_name', formData.full_name || '');
-        data.append('email', formData.email || '');
-        data.append('gender', formData.gender || '');
-        data.append('age', formData.age || 0);
-        data.append('total_points', formData.total_points || 0);
-      }
-      else if (table === 'locations') {
-        data.append('location_name', formData.location_name);
-      }
-      else if (table === 'restaurants') {
-        data.append('restaurant_name', formData.restaurant_name);
-        data.append('location_id', formData.location_id);
-      }
-  
-      const url = `/index.php?page=admin&table=${table}&action=${action}&user_id=${adminId}${id ? `&id=${id}` : ''}`;
-      const res = await api.post(url, data);
+      const loc = locations.find(l => l.location_id === Number(formData.location_id));
+      const hasRes = loc?.location_name.match(/โรงเย็น|โรงร้อน/) ? 1 : 0;
+      data.append('food_name', formData.food_name);
+      data.append('sodium_mg', formData.sodium_mg);
+      data.append('location_id', formData.location_id);
+      data.append('has_restaurant', String(hasRes));
+      data.append('restaurant_id', formData.restaurant_id || 0);
+      data.append('description', formData.description || '');
+      if (selectedFile) data.append('food_image', selectedFile);
+    } 
+    else if (table === 'medicines' || table === 'herbs') {
+      if (!formData.title) { toast({ title: "กรุณากรอกชื่อรายการ", variant: "destructive" }); return; }
+      if (table === 'medicines' && !formData.med_category) { toast({ title: "กรุณาเลือกหมวดหมู่ยา", variant: "destructive" }); return; }
       
-      if (res.data.status === "success") {
-        toast({ title: "สำเร็จ", description: res.data.message });
-        setDialogOpen(false); 
-        setSelectedFile(null); 
-        refreshData();
-      }
-    } catch (e) { 
-      toast({ title: "เกิดข้อผิดพลาด", variant: "destructive" }); 
+      data.append('title', formData.title);
+      // 🌟 ส่งค่า detail และ warning ที่ดึงออกมาจาก JSON แล้ว
+      data.append('detail', formData.detail || '');
+      data.append('warning', formData.warning || '');
+      if (table === 'medicines') data.append('med_category', formData.med_category);
+      if (selectedFile) data.append('image_path', selectedFile);
     }
-  };
+    else if (table === 'users') {
+      if (!formData.full_name || !formData.email) { toast({ title: "กรุณากรอกชื่อและอีเมล", variant: "destructive" }); return; }
+      data.append('full_name', formData.full_name);
+      data.append('email', formData.email);
+      data.append('gender', formData.gender || '');
+      data.append('age', formData.age || 0);
+      data.append('total_points', formData.total_points || 0);
+      data.append('pretest_score', formData.pretest_score || 0);
+      data.append('posttest_score', formData.posttest_score || 0);
+    }
+    else if (table === 'locations') {
+      data.append('location_name', formData.location_name);
+    }
+    else if (table === 'restaurants') {
+      data.append('restaurant_name', formData.restaurant_name);
+      data.append('location_id', formData.location_id);
+    }
+
+    const url = `/index.php?page=admin&table=${table}&action=${action}&user_id=${adminId}${id ? `&id=${id}` : ''}`;
+    const res = await api.post(url, data);
+    
+    if (res.data.status === "success") {
+      toast({ title: "สำเร็จ", description: res.data.message });
+      setDialogOpen(false); setSelectedFile(null); refreshData();
+    }
+  } catch (e) { toast({ title: "เกิดข้อผิดพลาด", variant: "destructive" }); }
+};
 
   const confirmDelete = async () => {
     const { table, id } = deleteDialog;
@@ -1050,7 +1051,7 @@ const openEditMedHerb = (item: any, mode: 'medicine' | 'herb') => {
                   <div>
                     <Label className="text-xs font-bold">รายละเอียด</Label>
                     <Textarea 
-                      value={formData.detail || ''} 
+                      value={formData.detail || ''} // 🌟 ใช้ค่าตรงๆ จาก formData ได้เลย
                       onChange={e => setFormData({...formData, detail: e.target.value})} 
                       className="rounded-xl" 
                     />
@@ -1058,7 +1059,7 @@ const openEditMedHerb = (item: any, mode: 'medicine' | 'herb') => {
                   <div>
                     <Label className="text-xs font-bold">คำเตือน/ข้อควรระวัง</Label>
                     <Textarea 
-                      value={formData.warning || ''} 
+                      value={formData.warning || ''} // 🌟 ใช้ค่าตรงๆ จาก formData ได้เลย
                       onChange={e => setFormData({...formData, warning: e.target.value})} 
                       className="rounded-xl" 
                     />
