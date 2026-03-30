@@ -837,7 +837,12 @@ const openEditMedHerb = (item: any, mode: 'medicine' | 'herb') => {
                                       <span className="text-xs font-bold text-foreground">{med.title}</span>
                                     </div>
                                     <div className="flex gap-1">
-                                      <button onClick={() => openEditMedHerb(med, 'medicine')} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
+                                      <button 
+                                        onClick={() => openEditMedHerb(med, 'medicine')} 
+                                        className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </button>
                                       <button onClick={() => setDeleteDialog({ open: true, table: "medicines", id: med.med_id, name: med.title })} className="p-1.5 text-destructive hover:bg-destructive/5 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
                                     </div>
                                   </div>
