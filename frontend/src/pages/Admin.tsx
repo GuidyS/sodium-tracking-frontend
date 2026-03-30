@@ -242,17 +242,20 @@ const handleSave = async () => {
       data.append('description', formData.description || '');
       if (selectedFile) data.append('food_image', selectedFile);
     } 
+
     else if (table === 'medicines' || table === 'herbs') {
       if (!formData.title) { toast({ title: "กรุณากรอกชื่อรายการ", variant: "destructive" }); return; }
       if (table === 'medicines' && !formData.med_category) { toast({ title: "กรุณาเลือกหมวดหมู่ยา", variant: "destructive" }); return; }
       
       data.append('title', formData.title);
-      // 🌟 ส่งค่า detail และ warning ที่ดึงออกมาจาก JSON แล้ว
+      // ส่งค่า detail/warning ที่ถูกแตกออกมาแล้วกลับไป (Backend จะไป pack JSON ให้เอง)
       data.append('detail', formData.detail || '');
       data.append('warning', formData.warning || '');
+      
       if (table === 'medicines') data.append('med_category', formData.med_category);
       if (selectedFile) data.append('image_path', selectedFile);
     }
+      
     else if (table === 'users') {
       if (!formData.full_name || !formData.email) { toast({ title: "กรุณากรอกชื่อและอีเมล", variant: "destructive" }); return; }
       data.append('full_name', formData.full_name);
@@ -336,25 +339,25 @@ const refreshData = () => {
 
 const openEditMedHerb = (item: any, mode: 'medicine' | 'herb') => {
   setEditMode(mode);
+  
   let contentObj = { detail: '', warning: '' };
   
-  try {
-    // ตรวจสอบว่า content เป็น string หรือ object และแปลงให้ถูกต้อง
-    const rawContent = item.content;
-    contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : (rawContent || contentObj);
-  } catch (e) {
-    console.error("Parse error:", e);
+  // 🌟 แตก JSON ออกมาเตรียมไว้ใน State ตั้งแต่ตอนกดปุ่ม
+  if (item.content) {
+    try {
+      contentObj = typeof item.content === 'string' ? JSON.parse(item.content) : item.content;
+    } catch (e) { console.error("Error parsing content", e); }
   }
 
-  // 🌟 นำข้อมูลที่แตกแล้วใส่ลงใน formData
   setFormData({
     ...item,
     detail: contentObj.detail || '',
     warning: contentObj.warning || ''
   });
+  
   setSelectedFile(null);
   setDialogOpen(true);
-};  
+};
 
   return (
     <div className="min-h-screen bg-background pb-20">
