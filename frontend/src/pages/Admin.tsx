@@ -1059,17 +1059,17 @@ const openEditMedHerb = (item: any, mode: 'medicine' | 'herb') => {
                   <div>
                     <Label className="text-xs font-bold">รายละเอียด</Label>
                     <Textarea 
-                      value={formData.detail || ''} // 🌟 ใช้ค่าตรงๆ จาก formData ได้เลย
+                      value={formData.detail ?? ''} // ใช้ ?? '' เพื่อป้องกันค่า null/undefined
                       onChange={e => setFormData({...formData, detail: e.target.value})} 
-                      className="rounded-xl" 
+                      className="rounded-xl mt-1" 
                     />
                   </div>
                   <div>
                     <Label className="text-xs font-bold">คำเตือน/ข้อควรระวัง</Label>
                     <Textarea 
-                      value={formData.warning || ''} // 🌟 ใช้ค่าตรงๆ จาก formData ได้เลย
+                      value={formData.warning ?? ''} 
                       onChange={e => setFormData({...formData, warning: e.target.value})} 
-                      className="rounded-xl" 
+                      className="rounded-xl mt-1" 
                     />
                   </div>
                   
