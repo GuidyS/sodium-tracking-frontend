@@ -902,7 +902,14 @@ const openEditMedHerb = (item: any, mode: 'medicine' | 'herb') => {
       {/* 🟢 Dialog สำหรับ Create/Update (ปรับฟิลด์ให้ตรง DB) */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{formData.id ? 'แก้ไข' : 'เพิ่ม'}ข้อมูล</DialogTitle></DialogHeader>
+          <DialogHeader>
+           <DialogTitle>
+            { (formData.food_id || formData.med_id || formData.herb_id || formData.user_id || formData.location_id || formData.restaurant_id) 
+              ? 'แก้ไขข้อมูล' 
+              : 'เพิ่มข้อมูล' 
+            }
+          </DialogTitle> 
+          </DialogHeader>
             <div className="space-y-4 py-4">
               {editMode === 'food' && (
                 <div className="space-y-4">
