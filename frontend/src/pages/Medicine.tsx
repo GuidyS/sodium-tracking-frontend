@@ -41,8 +41,8 @@ type Category = {
           const mapMedicine = (m: any) => ({
             id: m.med_id,
             name: m.title,
-            detail: `ข้อบ่งใช้: ${m.content["ข้อบ่งใช้หลัก"] || ""}\n\nข้อควรระวัง: ${m.content["ข้อควรระวังเฉพาะตัว & สำคัญ"] || ""}\n\nใครไม่ควรใช้: ${m.content["ใครบ้างที่ไม่ควรซื้อใช้เอง"] || ""}`,
-            warning: m.content["อาการเตือนที่ควรหยุดยา"] || "",
+            detail: m.display_detail || "", // ใช้ค่าที่ Backend เตรียมไว้ให้
+            warning: m.display_warning || "",
             image: m.image_path ? `/med-herb/${m.image_path}` : undefined 
           });
 
