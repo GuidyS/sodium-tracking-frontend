@@ -339,23 +339,14 @@ const refreshData = () => {
 
 const openEditMedHerb = (item: any, mode: 'medicine' | 'herb') => {
   setEditMode(mode);
-  
-  let contentObj = { detail: '', warning: '' };
-  
-  // 🌟 แตก JSON ออกมาเตรียมไว้ใน State ตั้งแต่ตอนกดปุ่ม
-  if (item.content) {
-    try {
-      contentObj = typeof item.content === 'string' ? JSON.parse(item.content) : item.content;
-    } catch (e) { console.error("Error parsing content", e); }
-  }
+  const content = typeof item.content === 'string' ? JSON.parse(item.content) : item.content;
 
   setFormData({
     ...item,
-    detail: contentObj.detail || '',
-    warning: contentObj.warning || ''
+    // ถ้ามี key detail (สมุนไพร) ให้ใช้เลย ถ้าไม่มีให้ไปดู key ภาษาไทย (ยา)
+    detail: content.detail || content["ข้อบ่งใช้หลัก"] || '',
+    warning: content.warning || content["อาการเตือนที่ควรหยุดยา"] || ''
   });
-  
-  setSelectedFile(null);
   setDialogOpen(true);
 };
 
