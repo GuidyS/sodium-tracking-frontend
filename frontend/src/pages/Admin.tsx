@@ -657,30 +657,37 @@ const openEditMedHerb = (item: any, mode: 'medicine' | 'herb') => {
               </AnimatePresence>
             </div>
         
-            {/* ส่วนแสดงรายการอาหาร (Grid Cards เหมือนเดิม) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
-              {foods.map(food => (
-                <div key={food.food_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center hover:border-primary/30 transition-all group relative overflow-hidden">
-                  <img 
-                    src={`/foods/${food.food_image}`} 
-                    className="w-12 h-12 rounded-lg object-cover bg-accent shadow-inner"
-                    onError={(e) => { (e.target as HTMLImageElement).src = "/foods/default-food.png" }}
-                    alt="" 
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate pr-14">{food.food_name}</p>
-                    <p className="text-xs text-primary font-black tracking-tight">{food.sodium_mg} <span className="text-[9px] text-muted-foreground font-medium uppercase">mg</span></p>
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="px-2 py-0.5 rounded-md bg-accent text-[9px] font-bold text-muted-foreground">{food.location_name}</span>
-                      {food.restaurant_name && <span className="text-[9px] text-primary/60 font-bold">• {food.restaurant_name}</span>}
+              {foods.map(food => { // 🌟 1. เปลี่ยนจากวงเล็บโค้ง ( เป็นปีกกาเปิด {
+            
+                // 🌟 2. วางตัวแปรไว้ตรงนี้
+                const backendUrl = "https://sodium-tracking-backend-production.up.railway.app";
+                
+                // 🌟 3. ต้องเติมคำว่า return
+                return (
+                  <div key={food.food_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center hover:border-primary/30 transition-all group relative overflow-hidden">
+                    <img 
+                      src={food.food_image ? `${backendUrl}/foods/${food.food_image}` : "/foods/default-food.png"} 
+                      className="w-12 h-12 rounded-lg object-cover bg-accent shadow-inner"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/foods/default-food.png" }}
+                      alt="" 
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm truncate pr-14">{food.food_name}</p>
+                      <p className="text-xs text-primary font-black tracking-tight">{food.sodium_mg} <span className="text-[9px] text-muted-foreground font-medium uppercase">mg</span></p>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className="px-2 py-0.5 rounded-md bg-accent text-[9px] font-bold text-muted-foreground">{food.location_name}</span>
+                        {food.restaurant_name && <span className="text-[9px] text-primary/60 font-bold">• {food.restaurant_name}</span>}
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => openFoodEdit(food)} className="p-1.5 bg-white/90 shadow-sm text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><Edit2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setDeleteDialog({ open: true, table: "foods", id: food.food_id, name: food.food_name })} className="p-1.5 bg-white/90 shadow-sm text-destructive rounded-lg hover:bg-destructive hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   </div>
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => openFoodEdit(food)} className="p-1.5 bg-white/90 shadow-sm text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><Edit2 className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => setDeleteDialog({ open: true, table: "foods", id: food.food_id, name: food.food_name })} className="p-1.5 bg-white/90 shadow-sm text-destructive rounded-lg hover:bg-destructive hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </div>
-                </div>
-              ))}
+                ); // 🌟 4. ปิดวงเล็บโค้ง
+                
+              })} {/* 🌟 5. ปิดปีกกา } แล้วค่อยปิดวงเล็บโค้ง ) */}
             </div>
           </motion.div>
         )}
