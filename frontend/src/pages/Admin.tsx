@@ -662,10 +662,7 @@ const openEditMedHerb = (item: any, mode: 'medicine' | 'herb') => {
               {foods.map(food => (
                 <div key={food.food_id} className="glass-card p-4 rounded-2xl flex gap-4 items-center hover:border-primary/30 transition-all group relative overflow-hidden">
                   <img 
-                    src={food.food_image ? `/foods/${food.food_image}` : "/foods/default-food.png"} 
-                    className="w-16 h-16 rounded-2xl object-cover bg-accent group-hover:scale-110 transition-transform duration-300" 
-                    onError={(e) => { (e.target as HTMLImageElement).src = "/foods/default-food.png" }}
-                    alt="" 
+                    src={food.food_image ? `https://sodium-tracking-backend-production.up.railway.app/foods/${food.food_image}` : "/foods/default-food.png"}
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm truncate pr-14">{food.food_name}</p>
