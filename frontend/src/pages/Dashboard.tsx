@@ -91,7 +91,7 @@ const Dashboard = () => {
       if (!userData || userData.posttest_done !== 0) return false;
       const now = new Date();
       const start = new Date('2026-03-18T00:00:00');
-      const end = new Date('2026-03-31T23:59:59');
+      const end = new Date('2026-03-05T23:59:59');
       return now >= start && now <= end;
     })();
 
